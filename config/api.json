@@ -1,0 +1,15 @@
+{
+	"name" : "Gopi",
+	"resources" : [
+		{ 
+			"type" : "rest",
+			"name" : "user",
+			"path" : "/users"
+		},
+		{ 
+			"type" : "auth",
+			"name" : "session",
+			"path" : "/sessions"
+		},
+	]
+}
