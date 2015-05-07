@@ -2,12 +2,12 @@
 	"name" : "Gopi",
 	"resources" : [
 		{ 
-			"type" : "rest",
+			"type" : 1,
 			"name" : "user",
 			"path" : "/users"
 		},
 		{ 
-			"type" : "auth",
+			"type" : 0,
 			"name" : "session",
 			"path" : "/sessions"
 		},

@@ -5,17 +5,13 @@ import(
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gocraft/web"
 	"net/http"
-	"net/http/httputil"
+	//"net/http/httputil"
 	"net/url"
 	"log"
 	"time"
 	"io/ioutil"
 )
 
-
-type Context struct {
-
-}
 
 // Append additional query params to the original URL query.
 func queryCombiner(handler http.Handler, addon string) http.Handler {
@@ -78,26 +74,26 @@ func sameHost(handler http.Handler) http.Handler {
 
 
 
-func (c *Context) Handler(rw web.ResponseWriter, req *web.Request) {
+// func (c *config.Context) Handler(rw web.ResponseWriter, req *web.Request) {
 	
-	serverUrl, err := url.Parse("http://localhost:9000/consumptions")
+// 	serverUrl, err := url.Parse("http://localhost:9000/consumptions")
 	
-	if err != nil {
-		log.Fatal("URL failed to parse")
-	}
+// 	if err != nil {
+// 		log.Fatal("URL failed to parse")
+// 	}
 
 
-	// initialize our reverse proxy
-	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
-	// wrap that proxy with our sameHost function
-	singleHosted := sameHost(reverseProxy)
-	// wrap that with our query param combiner
-	combined := queryCombiner(singleHosted, "hello=world")
+// 	// initialize our reverse proxy
+// 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
+// 	// wrap that proxy with our sameHost function
+// 	singleHosted := sameHost(reverseProxy)
+// 	// wrap that with our query param combiner
+// 	combined := queryCombiner(singleHosted, "hello=world")
 
-	combinedHeaders := headerCombiner(combined)
-	// and finally allow CORS
-	addCORS(combinedHeaders).ServeHTTP(rw, req.Request)
-}
+// 	combinedHeaders := headerCombiner(combined)
+// 	// and finally allow CORS
+// 	addCORS(combinedHeaders).ServeHTTP(rw, req.Request)
+// }
 
 
 
@@ -110,10 +106,15 @@ func addCORS(handler http.Handler) http.Handler {
 }
 
 
-func Bootstrap(conf config.Config) {	
-	router := web.New(Context{}).             
+func Bootstrap(api config.API) {	
+	
+	rootRouter := web.New(config.Context{}).             
   Middleware(web.LoggerMiddleware).          
-  Middleware(web.ShowErrorsMiddleware).      
-  Get("/", (*Context).Handler)              
-  http.ListenAndServe("localhost:7777", router)  
+  Middleware(web.ShowErrorsMiddleware)
+
+  apiRouter := rootRouter.Subrouter(api, "/api")
+	apiRouter.Get("/", (*config.API).Root)
+  http.ListenAndServe("localhost:7777", rootRouter)
+
+
 }
