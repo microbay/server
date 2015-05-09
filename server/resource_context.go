@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var TEST *model.Resource
+
 type ResourceContext struct {
 	*Context
 	Resource *model.Resource
@@ -36,46 +38,27 @@ func (c *ResourceContext) RedisToJWTAuthMiddleware(rw web.ResponseWriter, req *w
 }
 
 func (c *ResourceContext) Proxy(rw web.ResponseWriter, req *web.Request) {
-	serverUrl, err := url.Parse("http://localhost:9000/consumptions")
 
+	index := c.Resource.Index % len(c.Resource.BalancedMicros)
+
+	serverUrl, err := url.Parse(c.Resource.BalancedMicros[index].URL)
 	if err != nil {
 		log.Fatal("URL failed to parse")
 	}
 
+	// Round-Robin
+	c.Resource.Index++
+	log.Debug("Round-Robin Index >>>>> ", index)
+
 	// initialize our reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
-	// wrap that proxy with our sameHost function
-	singleHosted := sameHost(reverseProxy)
-	// wrap that with our query param combiner
-	combined := queryCombiner(singleHosted, "hello=world")
 
-	combinedHeaders := headerCombiner(combined)
+	//combinedHeaders := headerCombiner(reverseProxy)
 	// and finally allow CORS
 
 	// reset path other wise inital path gets passed through
 	req.URL.Path = ""
-	combinedHeaders.ServeHTTP(rw, req.Request)
-}
-
-// Append additional query params to the original URL query.
-func queryCombiner(handler http.Handler, addon string) http.Handler {
-	// first parse the provided string to pull out the keys and values
-	values, err := url.ParseQuery(addon)
-	if err != nil {
-		log.Fatal("addon failed to parse")
-	}
-
-	// now we apply our addon params to the existing query
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query()
-
-		for k, _ := range values {
-			query.Add(k, values.Get(k))
-		}
-
-		r.URL.RawQuery = query.Encode()
-		handler.ServeHTTP(w, r)
-	})
+	reverseProxy.ServeHTTP(rw, req.Request)
 }
 
 // Append additional query params to the original URL query.
@@ -98,12 +81,6 @@ func headerCombiner(handler http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("Authorization", tokenString)
-		handler.ServeHTTP(w, r)
-	})
-}
-
-func sameHost(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handler.ServeHTTP(w, r)
 	})
 }

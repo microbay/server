@@ -1,19 +1,45 @@
 {
+
 	"host" : "localhost:7777",
-	
+
 	"redis" : {
 		"host" : "localhost:6379"
-	},	
-	
+	},
+
 	"api" : {
 		"name" : "Example API",
 		"portal" : "http://developers.example-api.com",
 		"resources" : [
-			{ 
+			{
 				"path" : "consumptions",
 				"micros" : [
 					{
 						"url" : "http://localhost:9000/consumptions",
+						"weight" : 1
+					},
+					{
+						"url" : "http://localhost:9001/consumptions",
+						"weight" : 1
+					},
+					{
+						"url" : "http://localhost:9002/consumptions",
+						"weight" : 1
+					}
+				]
+			},
+			{
+				"path" : "user",
+				"micros" : [
+					{
+						"url" : "http://localhost:9000/user",
+						"weight" : 4
+					},
+					{
+						"url" : "http://localhost:9001/user",
+						"weight" : 1
+					},
+					{
+						"url" : "http://localhost:9002/user",
 						"weight" : 1
 					}
 				]

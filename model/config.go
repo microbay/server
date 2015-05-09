@@ -1,6 +1,7 @@
 package model
 
 import (
+	//"container/ring"
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -10,15 +11,15 @@ const (
 )
 
 type API struct {
-	Name      string     `json:"name"`
-	Portal    string     `json:"portal"`
-	Resources []Resource `json:"resources"`
+	Name      string      `json:"name"`
+	Portal    string      `json:"portal"`
+	Resources []*Resource `json:"resources"`
 }
 
 func (a *API) FindResourceByPath(p string) *Resource {
 	for _, v := range a.Resources {
 		if v.Path == p {
-			return &v
+			return v
 		}
 	}
 	return nil
@@ -28,6 +29,9 @@ type Resource struct {
 	Auth   string  `json:"auth"`
 	Path   string  `json:"path"`
 	Micros []Micro `json:"micros"`
+	Index  int
+	//Ring   ring.Ring
+	BalancedMicros []Micro
 }
 
 type Micro struct {
