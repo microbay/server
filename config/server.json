@@ -1,0 +1,23 @@
+{
+	"host" : "localhost:7777",
+	
+	"redis" : {
+		"host" : "localhost:6379"
+	},	
+	
+	"api" : {
+		"name" : "Example API",
+		"portal" : "http://developers.example-api.com",
+		"resources" : [
+			{ 
+				"path" : "consumptions",
+				"micros" : [
+					{
+						"url" : "http://localhost:9000/consumptions",
+						"weight" : 1
+					}
+				]
+			}
+		]
+	}
+}
