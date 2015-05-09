@@ -1,15 +1,16 @@
 {
-	"name" : "Gopi",
+	"name" : "Example API",
+	"portal" : "http://developers.apigo.com",
 	"resources" : [
 		{ 
-			"type" : 1,
-			"name" : "user",
-			"path" : "/users"
-		},
-		{ 
-			"type" : 0,
-			"name" : "session",
-			"path" : "/sessions"
-		},
+			"auth" : 1,
+			"path" : "/consumptions",
+			"micros" : [
+				{
+					"url" : "http://localhost:9000/consumptions",
+					"weight" : 1
+				}
+			]
+		}
 	]
 }

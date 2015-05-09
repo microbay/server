@@ -1,17 +1,18 @@
 package server
 
-import(
-	"github.com/SHMEDIALIMITED/apigo/config"
+import (
+	"github.com/SHMEDIALIMITED/apigo/model"
 	jwt "github.com/dgrijalva/jwt-go"
+	//"github.com/fvbock/endless"
 	"github.com/gocraft/web"
+	"github.com/spf13/viper"
 	"net/http"
 	//"net/http/httputil"
-	"net/url"
-	"log"
-	"time"
+	log "github.com/Sirupsen/logrus"
 	"io/ioutil"
+	"net/url"
+	"time"
 )
-
 
 // Append additional query params to the original URL query.
 func queryCombiner(handler http.Handler, addon string) http.Handler {
@@ -34,8 +35,6 @@ func queryCombiner(handler http.Handler, addon string) http.Handler {
 	})
 }
 
-
-
 // Append additional query params to the original URL query.
 func headerCombiner(handler http.Handler) http.Handler {
 
@@ -54,16 +53,11 @@ func headerCombiner(handler http.Handler) http.Handler {
 		panic(e.Error())
 	}
 
-	
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("Authorization", tokenString)
 		handler.ServeHTTP(w, r)
 	})
 }
-
-
-
-
 
 func sameHost(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -72,16 +66,13 @@ func sameHost(handler http.Handler) http.Handler {
 	})
 }
 
-
-
 // func (c *config.Context) Handler(rw web.ResponseWriter, req *web.Request) {
-	
+
 // 	serverUrl, err := url.Parse("http://localhost:9000/consumptions")
-	
+
 // 	if err != nil {
 // 		log.Fatal("URL failed to parse")
 // 	}
-
 
 // 	// initialize our reverse proxy
 // 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
@@ -95,8 +86,6 @@ func sameHost(handler http.Handler) http.Handler {
 // 	addCORS(combinedHeaders).ServeHTTP(rw, req.Request)
 // }
 
-
-
 func addCORS(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -105,16 +94,17 @@ func addCORS(handler http.Handler) http.Handler {
 	})
 }
 
+func Bootstrap() {
+	api := model.Load()
+	log.Info(api.Name, " listening on ", viper.GetString("host"), " in ", viper.Get("env"), " mode")
 
-func Bootstrap(api config.API) {	
-	
-	rootRouter := web.New(config.Context{}).             
-  Middleware(web.LoggerMiddleware).          
-  Middleware(web.ShowErrorsMiddleware)
+	rootRouter := web.New(Context{}).
+		Middleware(web.LoggerMiddleware).
+		Middleware(web.ShowErrorsMiddleware).
+		Get("/", (*Context).Root)
 
-  apiRouter := rootRouter.Subrouter(api, "/api")
-	apiRouter.Get("/", (*config.API).Root)
-  http.ListenAndServe("localhost:7777", rootRouter)
-
-
+	err := http.ListenAndServe(viper.GetString("host"), rootRouter)
+	if err != nil {
+		log.Fatal("Failed to start server ", err)
+	}
 }
