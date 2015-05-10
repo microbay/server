@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-var TEST *model.Resource
-
 type ResourceContext struct {
 	*Context
 	Resource *model.Resource
@@ -37,7 +35,7 @@ func (c *ResourceContext) RedisToJWTAuthMiddleware(rw web.ResponseWriter, req *w
 	}
 }
 
-func (c *ResourceContext) Proxy(rw web.ResponseWriter, req *web.Request) {
+func (c *ResourceContext) BalancedProxy(rw web.ResponseWriter, req *web.Request) {
 
 	index := c.Resource.Index % len(c.Resource.BalancedMicros)
 
@@ -48,17 +46,15 @@ func (c *ResourceContext) Proxy(rw web.ResponseWriter, req *web.Request) {
 
 	// Round-Robin
 	c.Resource.Index++
-	log.Debug("Round-Robin Index >>>>> ", index)
 
 	// initialize our reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
 
-	//combinedHeaders := headerCombiner(reverseProxy)
-	// and finally allow CORS
+	combinedHeaders := headerCombiner(reverseProxy)
 
 	// reset path other wise inital path gets passed through
 	req.URL.Path = ""
-	reverseProxy.ServeHTTP(rw, req.Request)
+	combinedHeaders.ServeHTTP(rw, req.Request)
 }
 
 // Append additional query params to the original URL query.

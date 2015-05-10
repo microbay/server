@@ -27,7 +27,7 @@ func Start() {
 	rootRouter.Subrouter(ResourceContext{}, "/").
 		Middleware((*ResourceContext).ResourceConfigMiddleware).
 		Middleware((*ResourceContext).RedisToJWTAuthMiddleware).
-		Get("/:resource", (*ResourceContext).Proxy)
+		Get("/:resource", (*ResourceContext).BalancedProxy)
 
 	createMicroServiceRings(Config.Resources)
 
@@ -40,6 +40,7 @@ func Start() {
 
 // Creates linked list (golang Ring) of micro services for round-robin lb.
 func createMicroServiceRings(resources []*model.Resource) {
+
 	for i := 0; i < len(resources); i++ {
 		micros := resources[i].Micros
 		resources[i].Index = 0
