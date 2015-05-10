@@ -10,7 +10,9 @@
 		"portal" : "http://developers.example-api.com",
 		"resources" : [
 			{
-				"path" : "consumptions",
+				"path" : "/consumptions",
+        "methods" : ["GET"],
+        "auth" : "redis-jwt",
 				"micros" : [
 					{
 						"url" : "http://localhost:9000/consumptions",
@@ -21,7 +23,17 @@
 						"weight" : 1
 					}
 				]
-			}
+			},
+      {
+        "path" : "/sessions",
+        "methods" : ["POST"],
+        "micros" : [
+          {
+            "url" : "http://localhost:3030/apis/stable/session/token",
+            "weight" : 1
+          }
+        ]
+      }
 		]
 	}
 }
