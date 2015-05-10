@@ -1,8 +1,6 @@
 package model
 
 import (
-	//"container/ring"
-	"github.com/SHMEDIALIMITED/apigo/server/backends"
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -10,33 +8,6 @@ import (
 const (
 	REDIS string = "redis"
 )
-
-type API struct {
-	Name      string      `json:"name"`
-	Portal    string      `json:"portal"`
-	Resources []*Resource `json:"resources"`
-}
-
-func (a *API) FindResourceByPath(p string) *Resource {
-	for _, v := range a.Resources {
-		if v.Path == p {
-			return v
-		}
-	}
-	return nil
-}
-
-type Resource struct {
-	Auth     string            `json:"auth"`
-	Path     string            `json:"path"`
-	Micros   []Micro           `json:"micros"`
-	Backends backends.Backends // Load balancer
-}
-
-type Micro struct {
-	URL    string `json:"url"`
-	Weight int    `json:"weight"`
-}
 
 func Load() API {
 	var api API

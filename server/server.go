@@ -3,9 +3,7 @@ package server
 import (
 	"github.com/SHMEDIALIMITED/apigo/model"
 	"github.com/SHMEDIALIMITED/apigo/server/backends"
-
-	//"github.com/fvbock/endless"
-	//"container/ring"
+	//"github.com/fvbock/endless" ----> Hot reloads
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
 	"github.com/spf13/viper"
@@ -14,9 +12,8 @@ import (
 
 var Config model.API
 
-// Creates Roor and resources routes and starts listening
+// Creates Root and resources routes and starts listening
 func Start() {
-
 	Config = model.Load()
 
 	log.Info(Config.Name, " listening on ", viper.GetString("host"), " in ", viper.Get("env"), " mode")
@@ -38,10 +35,9 @@ func Start() {
 	if err != nil {
 		log.Fatal("Failed to start server ", err)
 	}
-
 }
 
-// Creates linked list (golang Ring) of micro services
+// Creates linked list (golang Ring) from weighted micros array per resource
 func prepareLoadBalancer(resources []*model.Resource) {
 	for i := 0; i < len(resources); i++ {
 		micros := resources[i].Micros
