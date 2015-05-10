@@ -1,10 +1,9 @@
 {
 
 	"host" : "localhost:7777",
+  "key" : "config/key.sample",
 
-	"redis" : {
-		"host" : "localhost:6379"
-	},
+  "redis" : "localhost:6379",
 
 	"api" : {
 		"name" : "Example API",
@@ -15,7 +14,7 @@
 				"micros" : [
 					{
 						"url" : "http://localhost:9000/consumptions",
-						"weight" : 2
+						"weight" : 1
 					},
 					{
 						"url" : "http://localhost:9001/consumptions",

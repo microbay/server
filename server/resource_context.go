@@ -5,11 +5,14 @@ import (
 	log "github.com/Sirupsen/logrus"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gocraft/web"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"time"
+)
+
+const (
+	REDIS string = "redis"
 )
 
 type ResourceContext struct {
@@ -27,7 +30,7 @@ func (c *ResourceContext) ResourceConfigMiddleware(rw web.ResponseWriter, req *w
 }
 
 func (c *ResourceContext) RedisToJWTAuthMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	if c.Resource.Auth == model.REDIS {
+	if c.Resource.Auth == REDIS {
 		c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
 	} else {
 		next(rw, req)
@@ -49,19 +52,14 @@ func (c *ResourceContext) BalancedProxy(rw web.ResponseWriter, req *web.Request)
 	// initialize our reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
 
-	combinedHeaders := headerCombiner(reverseProxy)
+	combinedHeaders := headerCombiner(reverseProxy, c.Config.Key)
 
 	req.URL.Path = ""
 	combinedHeaders.ServeHTTP(rw, req.Request)
 }
 
 // Append additional query params to the original URL query.
-func headerCombiner(handler http.Handler) http.Handler {
-
-	key, e := ioutil.ReadFile("/Users/patrickwolleb/Documents/WORK/apigo/src/github.com/SHMEDIALIMITED/apigo/config/sample_key")
-	if e != nil {
-		panic(e.Error())
-	}
+func headerCombiner(handler http.Handler, key []byte) http.Handler {
 
 	c := map[string]interface{}{"premise_id": -2287340764, "exp": float64(time.Now().Unix() + 100)}
 

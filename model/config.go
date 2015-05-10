@@ -3,10 +3,8 @@ package model
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
-)
-
-const (
-	REDIS string = "redis"
+	"io/ioutil"
+	"path/filepath"
 )
 
 func Load() API {
@@ -15,8 +13,14 @@ func Load() API {
 		log.Fatal("Failed loading server.json ", err)
 	}
 	if err := viper.MarshalKey("api", &api); err != nil {
-		log.Fatal("Malformed server.json ", err)
+		log.Fatal("Malformed api section in server.json ", err)
 	}
+	keyPath, _ := filepath.Abs("config/key.sample")
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		log.Fatal("Failed loading private key file", viper.GetString("key"), err)
+	}
+	api.Key = key
 	log.Debug("Config loaded")
 	return api
 }
@@ -41,6 +45,8 @@ func setupEnvVars() {
 	viper.SetDefault("loglevel", "debug")
 	viper.BindEnv("host")
 	viper.SetDefault("host", "localhost:7777")
+	viper.BindEnv("redis")
+	viper.SetDefault("redis", "localhost:6379")
 }
 
 func initLogLevel() {
