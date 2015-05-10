@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/SHMEDIALIMITED/apigo/model"
 	log "github.com/Sirupsen/logrus"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gocraft/web"
@@ -11,17 +10,12 @@ import (
 	"time"
 )
 
-const (
-	REDIS string = "redis"
-)
-
-type ResourceContext struct {
-	*Context
-	Resource *model.Resource
+type Session struct {
+	User string
 }
 
-func (c *ResourceContext) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	c.Resource = c.Config.FindResourceByPath(req.PathParams["resource"])
+func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	c.Resource = c.Config.FindResourceByRequest(req.Request)
 	if c.Resource == nil {
 		c.RenderError(rw, "Access Forbidden", http.StatusForbidden)
 	} else {
@@ -29,15 +23,8 @@ func (c *ResourceContext) ResourceConfigMiddleware(rw web.ResponseWriter, req *w
 	}
 }
 
-func (c *ResourceContext) RedisToJWTAuthMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	if c.Resource.Auth == REDIS {
-		c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
-	} else {
-		next(rw, req)
-	}
-}
-
-func (c *ResourceContext) BalancedProxy(rw web.ResponseWriter, req *web.Request) {
+// Reverse proxies and load-balances backend micro services
+func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 
 	backend := c.Resource.Backends.Choose()
 	if backend == nil {
@@ -49,10 +36,16 @@ func (c *ResourceContext) BalancedProxy(rw web.ResponseWriter, req *web.Request)
 		log.Fatal("URL failed to parse")
 	}
 
-	// initialize our reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
-
+	//if c.Resource.Auth == REDIS_JWT {
 	combinedHeaders := headerCombiner(reverseProxy, c.Config.Key)
+	//}
+
+	// if c.Resource.Auth == REDIS_JWT {
+	// 	c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
+	// } else {
+	// 	next(rw, req)
+	// }
 
 	req.URL.Path = ""
 	combinedHeaders.ServeHTTP(rw, req.Request)

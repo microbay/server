@@ -16,20 +16,22 @@ var Config model.API
 func Start() {
 	Config = model.Load()
 
-	log.Info(Config.Name, " listening on ", viper.GetString("host"), " in ", viper.Get("env"), " mode")
+	if err := ConnectRedis(); err != nil {
+		log.Fatal("Failed to connect to Redis ", err)
+	}
 
 	rootRouter := web.New(Context{}).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
 		Middleware((*Context).ConfigMiddleware).
-		Middleware((*Context).RootMiddleware)
-
-	rootRouter.Subrouter(ResourceContext{}, "/").
-		Middleware((*ResourceContext).ResourceConfigMiddleware).
-		Middleware((*ResourceContext).RedisToJWTAuthMiddleware).
-		Get("/:resource", (*ResourceContext).BalancedProxy)
+		Middleware((*Context).RootMiddleware).
+		Middleware((*Context).ResourceConfigMiddleware).
+		Middleware((*Context).RedisToJWTAuthMiddleware).
+		Middleware((*Context).BalancedProxy)
 
 	prepareLoadBalancer(Config.Resources)
+
+	log.Info(Config.Name, " listening on ", viper.GetString("host"), " in ", viper.Get("env"), " mode")
 
 	err := http.ListenAndServe(viper.GetString("host"), rootRouter)
 	if err != nil {

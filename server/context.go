@@ -10,7 +10,9 @@ import (
 
 // Root context
 type Context struct {
-	Config model.API
+	Config   model.API
+	Resource *model.Resource
+	Session  *Session
 }
 
 // Assigns global config to context --> muset be a better way to pass that onto context
