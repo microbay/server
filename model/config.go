@@ -2,6 +2,7 @@ package model
 
 import (
 	//"container/ring"
+	"github.com/SHMEDIALIMITED/apigo/server/backends"
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -26,12 +27,10 @@ func (a *API) FindResourceByPath(p string) *Resource {
 }
 
 type Resource struct {
-	Auth   string  `json:"auth"`
-	Path   string  `json:"path"`
-	Micros []Micro `json:"micros"`
-	Index  int
-	//Ring   ring.Ring
-	BalancedMicros []Micro
+	Auth     string            `json:"auth"`
+	Path     string            `json:"path"`
+	Micros   []Micro           `json:"micros"`
+	Backends backends.Backends // Load balancer
 }
 
 type Micro struct {
