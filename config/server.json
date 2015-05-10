@@ -15,14 +15,10 @@
 				"micros" : [
 					{
 						"url" : "http://localhost:9000/consumptions",
-						"weight" : 5
-					},
-					{
-						"url" : "http://localhost:9001/consumptions",
 						"weight" : 2
 					},
 					{
-						"url" : "http://localhost:9002/consumptions",
+						"url" : "http://localhost:9001/consumptions",
 						"weight" : 1
 					}
 				]

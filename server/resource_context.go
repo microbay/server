@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	//"reflect"
 	"time"
 )
 
@@ -37,22 +36,21 @@ func (c *ResourceContext) RedisToJWTAuthMiddleware(rw web.ResponseWriter, req *w
 
 func (c *ResourceContext) BalancedProxy(rw web.ResponseWriter, req *web.Request) {
 
-	index := c.Resource.Index % len(c.Resource.BalancedMicros)
+	backend := c.Resource.Backends.Choose()
+	if backend == nil {
+		log.Error("no backend for client %s", req.RemoteAddr)
+	}
 
-	serverUrl, err := url.Parse(c.Resource.BalancedMicros[index].URL)
+	serverUrl, err := url.Parse(backend.String())
 	if err != nil {
 		log.Fatal("URL failed to parse")
 	}
-
-	// Round-Robin
-	c.Resource.Index++
 
 	// initialize our reverse proxy
 	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
 
 	combinedHeaders := headerCombiner(reverseProxy)
 
-	// reset path other wise inital path gets passed through
 	req.URL.Path = ""
 	combinedHeaders.ServeHTTP(rw, req.Request)
 }
