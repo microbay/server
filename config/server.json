@@ -16,7 +16,7 @@
 				"micros" : [
 					{
 						"url" : "http://localhost:9000/consumptions",
-						"weight" : 1
+						"weight" : 2
 					},
 					{
 						"url" : "http://localhost:9001/consumptions",

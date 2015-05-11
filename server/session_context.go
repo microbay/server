@@ -1,15 +1,24 @@
 package server
 
 import (
+	"encoding/json"
 	log "github.com/Sirupsen/logrus"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/gocraft/web"
 	"net/http"
+	"time"
 )
 
 const (
 	REDIS_JWT string = "redis-jwt"
 )
+
+type Session struct {
+	PremiseID string `json="premise_id"`
+	Expires   float64
+	JWT       string
+}
 
 var connections *pool.Pool
 
@@ -31,7 +40,18 @@ func (c *Context) RedisToJWTAuthMiddleware(rw web.ResponseWriter, req *web.Reque
 			if err != nil {
 				c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
 			} else {
-				c.Session = &Session{user}
+				var session Session
+				json.Unmarshal([]byte(user), &session)
+				session.Expires = float64(time.Now().Unix() + 5) // Expires in 5 secs
+				token := jwt.New(jwt.SigningMethodRS256)
+				token.Claims = map[string]interface{}{"premise_id": session.PremiseID, "exp": session.Expires}
+				tokenString, e := token.SignedString(c.Config.Key)
+				if e != nil {
+					log.Error("Could not sign JWT", session)
+				}
+				session.JWT = tokenString
+
+				c.Session = &session
 				log.Debug("RedisToJWTAuthMiddleware added ", c.Session)
 				next(rw, req)
 			}

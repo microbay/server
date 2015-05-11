@@ -10,13 +10,10 @@ import (
 	"time"
 )
 
-type Session struct {
-	User string
-}
-
 func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	c.Resource = c.Config.FindResourceByRequest(req.Request)
-	if c.Resource == nil {
+	var err error
+	c.Resource, err = c.Config.FindResourceByRequest(req.Request)
+	if err != nil {
 		c.RenderError(rw, "Access Forbidden", http.StatusForbidden)
 	} else {
 		next(rw, req)
@@ -42,9 +39,9 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 	//}
 
 	// if c.Resource.Auth == REDIS_JWT {
-	// 	c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
+	//  c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
 	// } else {
-	// 	next(rw, req)
+	//  next(rw, req)
 	// }
 
 	req.URL.Path = ""
@@ -66,6 +63,7 @@ func headerCombiner(handler http.Handler, key []byte) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Set("Authorization", tokenString)
+		r.Header.Set("X-Premise", "-2287340764")
 		handler.ServeHTTP(w, r)
 	})
 }

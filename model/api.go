@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -11,13 +12,18 @@ type API struct {
 	Key       []byte
 }
 
-func (a *API) FindResourceByRequest(req *http.Request) *Resource {
+func (a *API) FindResourceByRequest(req *http.Request) (*Resource, error) {
 	for _, resources := range a.Resources {
-		if resources.Path == req.URL.Path && stringInSlice(req.Method, resources.Methods) {
-			return resources
+		if resources.Path == req.URL.Path {
+			if stringInSlice(req.Method, resources.Methods) {
+				return resources, nil
+			} else {
+				return nil, errors.New("Method")
+			}
+
 		}
 	}
-	return nil
+	return nil, errors.New("Resource")
 }
 
 func stringInSlice(a string, list []string) bool {
