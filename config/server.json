@@ -10,30 +10,16 @@
 		"portal" : "http://developers.example-api.com",
 		"resources" : [
 			{
-				"path" : "/consumptions",
+				"path" : "/hello",
         "methods" : ["GET"],
-        "auth" : "redis-jwt",
+        "plugins" : ["redis-jwt", "noop"],
 				"micros" : [
 					{
-						"url" : "http://localhost:9000/consumptions",
-						"weight" : 2
-					},
-					{
-						"url" : "http://localhost:9001/consumptions",
+						"url" : "http://localhost:9000",
 						"weight" : 1
 					}
 				]
-			},
-      {
-        "path" : "/sessions",
-        "methods" : ["POST"],
-        "micros" : [
-          {
-            "url" : "http://localhost:3030/apis/stable/session/token",
-            "weight" : 1
-          }
-        ]
-      }
+			}
 		]
 	}
 }

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/SHMEDIALIMITED/apigo/server/backends"
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -55,4 +56,18 @@ func initLogLevel() {
 		log.Warn("Unsupported log level ", viper.Get("loglevel"))
 	}
 	log.SetLevel(logLevel)
+}
+
+// Creates linked list (golang Ring) from weighted micros array per resource
+func PrepareLoadBalancer(resources []*Resource) {
+	for i := 0; i < len(resources); i++ {
+		micros := resources[i].Micros
+		flattenedMicros := make([]string, 0)
+		for j := 0; j < len(micros); j++ {
+			for n := 0; n < micros[j].Weight; n++ {
+				flattenedMicros = append(flattenedMicros, micros[j].URL)
+			}
+		}
+		resources[i].Backends = backends.Build("round-robin", flattenedMicros)
+	}
 }

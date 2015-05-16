@@ -6,13 +6,14 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 )
 
 // Root context
 type Context struct {
 	Config   model.API
 	Resource *model.Resource
-	Session  *Session
 }
 
 // Assigns global config to context --> muset be a better way to pass that onto context
@@ -65,4 +66,66 @@ func (c *Context) RenderError(rw web.ResponseWriter, message string, status int)
 	header.Set("Content-Type", "application/json")
 	rw.WriteHeader(status)
 	rw.Write(js)
+}
+
+func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	var err error
+	c.Resource, err = c.Config.FindResourceByRequest(req.Request)
+	if err != nil {
+		c.RenderError(rw, "Access Forbidden", http.StatusForbidden)
+	} else {
+		next(rw, req)
+	}
+}
+
+func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	var err error
+	for i := range c.Resource.Plugins {
+		c.Resource.Middleware[i].Inbound(req)
+	}
+	if err != nil {
+		c.RenderError(rw, "Please try again.", http.StatusInternalServerError)
+	} else {
+		next(rw, req)
+	}
+}
+
+// Reverse proxies and load-balances backend micro services
+func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+
+	backend := c.Resource.Backends.Choose()
+	if backend == nil {
+		log.Error("no backend for client %s", req.RemoteAddr)
+	}
+
+	serverUrl, err := url.Parse(backend.String())
+	if err != nil {
+		log.Fatal("URL failed to parse")
+	}
+
+	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
+	//if c.Resource.Auth == REDIS_JWT {
+	//combinedHeaders := headerCombiner(reverseProxy, c.Session.JWT)
+	//}
+
+	//log.Debug(">>>", c.Session.JWT)
+
+	// if c.Resource.Auth == REDIS_JWT {
+	//  c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
+	// } else {
+	//  next(rw, req)
+	// }
+
+	req.URL.Path = ""
+	reverseProxy.ServeHTTP(rw, req.Request)
+}
+
+// Append additional query params to the original URL query.
+func headerCombiner(handler http.Handler, token string) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Set("Authorization", token)
+		r.Header.Set("X-Premise", "-2287340764")
+		handler.ServeHTTP(w, r)
+	})
 }
