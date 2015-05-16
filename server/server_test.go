@@ -25,9 +25,9 @@ func generateTestModel() []*model.Resource {
 	return resources
 }
 
-func TestPrepareLoadBalancer(t *testing.T) {
+func TestBootstrapLoadBalancer(t *testing.T) {
 	resources := generateTestModel()
-	prepareLoadBalancer(resources)
+	bootstrapLoadBalancer(resources)
 	resource := resources[0]
 	if resource.Backends == nil {
 		t.Error(

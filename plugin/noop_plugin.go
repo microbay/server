@@ -11,6 +11,11 @@ const (
 
 type NoopPlugin struct{}
 
+func (p *NoopPlugin) Bootstrap() (Plugin, error) {
+	var err error
+	return p, err
+}
+
 func (p *NoopPlugin) Inbound(req *web.Request) {
 	log.Debug("NoopPlugin::Inbound")
 }

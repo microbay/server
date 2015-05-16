@@ -38,7 +38,11 @@ func bootstrapPlugins(resources []*model.Resource) {
 		activePlugins := resources[i].Plugins
 		plugins := make([]plugin.Plugin, 0)
 		for j := 0; j < len(activePlugins); j++ {
-			plugins = append(plugins, plugin.Get(activePlugins[j]))
+			if p, err := plugin.Get(activePlugins[j]).Bootstrap(); err != nil {
+				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)
+			} else {
+				plugins = append(plugins, p)
+			}
 		}
 		resources[i].Middleware = plugins
 	}
