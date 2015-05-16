@@ -5,6 +5,10 @@ import (
 	"github.com/gocraft/web"
 )
 
+const (
+	PLUGIN_NOOP string = "noop"
+)
+
 type NoopPlugin struct{}
 
 func (p *NoopPlugin) Inbound(req *web.Request) {

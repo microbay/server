@@ -10,6 +10,10 @@ import (
 	//"time"
 )
 
+const (
+	PLUGIN_REDIS_TO_JWT string = "redis-jwt"
+)
+
 type RedisToJWTPlugin struct{}
 
 func (p *RedisToJWTPlugin) Inbound(req *web.Request) {
