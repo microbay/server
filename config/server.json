@@ -1,9 +1,14 @@
 {
 
 	"host" : "localhost:7777",
-  "key" : "config/key.sample",
 
-  "redis" : "localhost:6379",
+  "plugins" : {
+    "redis-jwt" : {
+      "host" : "localhost:6379",
+      "connections" : 10,
+      "key" : "config/key.sample.pub"
+     }
+  },
 
 	"api" : {
 		"name" : "Example API",

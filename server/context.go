@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/SHMEDIALIMITED/apigo/model"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
 	"net/http"
@@ -12,8 +11,8 @@ import (
 
 // Root context
 type Context struct {
-	Config   model.API
-	Resource *model.Resource
+	Config   API
+	Resource *Resource
 }
 
 // Assigns global config to context --> muset be a better way to pass that onto context
@@ -31,43 +30,6 @@ func (c *Context) RootMiddleware(rw web.ResponseWriter, req *web.Request, next w
 	}
 }
 
-// Renders from struct to JSON
-func (a *Context) Render(rw web.ResponseWriter, model interface{}, status int) {
-	jsonString, err := json.MarshalIndent(&model, "", "    ")
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		log.Error("Render failed to marshall model", err)
-		return
-	}
-	header := rw.Header()
-	header.Set("Content-Type", "application/json")
-	header.Set("Access-Control-Allow-Origin", "*")
-	header.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-	header.Set("Access-Control-Allow-Headers", "Authorization")
-	rw.WriteHeader(status)
-	rw.Write(jsonString)
-}
-
-// Responds from error to JSON
-type JSONError struct {
-	Message  string `json:"message"`
-	MoreInfo string `json:"moreInfo"`
-}
-
-// Format Error to JSON with moreInfo link
-func (c *Context) RenderError(rw web.ResponseWriter, message string, status int) {
-	js, err := json.MarshalIndent(&JSONError{message, c.Config.Portal}, "", "    ")
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
-		log.Error("RenderError failed to marshall JSONError", err)
-		return
-	}
-	header := rw.Header()
-	header.Set("Content-Type", "application/json")
-	rw.WriteHeader(status)
-	rw.Write(js)
-}
-
 func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	var err error
 	c.Resource, err = c.Config.FindResourceByRequest(req.Request)
@@ -79,15 +41,14 @@ func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Reque
 }
 
 func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	var err error
 	for i := range c.Resource.Plugins {
-		c.Resource.Middleware[i].Inbound(req)
+		if _, err := c.Resource.Middleware[i].Inbound(req); err != nil {
+			message, status := err.Error()
+			c.RenderError(rw, message, status)
+			return
+		}
 	}
-	if err != nil {
-		c.RenderError(rw, "Please try again.", http.StatusInternalServerError)
-	} else {
-		next(rw, req)
-	}
+	next(rw, req)
 }
 
 // Reverse proxies and load-balances backend micro services
@@ -128,4 +89,41 @@ func headerCombiner(handler http.Handler, token string) http.Handler {
 		r.Header.Set("X-Premise", "-2287340764")
 		handler.ServeHTTP(w, r)
 	})
+}
+
+// Responds from error to JSON
+type JSONError struct {
+	Message  string `json:"message"`
+	MoreInfo string `json:"moreInfo"`
+}
+
+// Renders from struct to JSON
+func (a *Context) Render(rw web.ResponseWriter, model interface{}, status int) {
+	jsonString, err := json.MarshalIndent(&model, "", "    ")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		log.Error("Render failed to marshall model", err)
+		return
+	}
+	header := rw.Header()
+	header.Set("Content-Type", "application/json")
+	header.Set("Access-Control-Allow-Origin", "*")
+	header.Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	header.Set("Access-Control-Allow-Headers", "Authorization")
+	rw.WriteHeader(status)
+	rw.Write(jsonString)
+}
+
+// Format Error to JSON with moreInfo link
+func (c *Context) RenderError(rw web.ResponseWriter, message string, status int) {
+	js, err := json.MarshalIndent(&JSONError{message, c.Config.Portal}, "", "    ")
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		log.Error("RenderError failed to marshall JSONError", err)
+		return
+	}
+	header := rw.Header()
+	header.Set("Content-Type", "application/json")
+	rw.WriteHeader(status)
+	rw.Write(js)
 }

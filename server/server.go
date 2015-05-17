@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/SHMEDIALIMITED/apigo/model"
 	"github.com/SHMEDIALIMITED/apigo/plugin"
 	"github.com/SHMEDIALIMITED/apigo/server/backends"
 	//"github.com/fvbock/endless" ----> Hot reloads
@@ -11,11 +10,11 @@ import (
 	"net/http"
 )
 
-var Config model.API
+var Config API
 
 // Creates Root and resources routes and starts listening
 func Start() {
-	Config = model.Load()
+	Config = LoadConfig()
 	bootstrapLoadBalancer(Config.Resources)
 	bootstrapPlugins(Config.Resources)
 	rootRouter := web.New(Context{}).
@@ -33,12 +32,12 @@ func Start() {
 	}
 }
 
-func bootstrapPlugins(resources []*model.Resource) {
+func bootstrapPlugins(resources []*Resource) {
 	for i := 0; i < len(resources); i++ {
 		activePlugins := resources[i].Plugins
 		plugins := make([]plugin.Plugin, 0)
 		for j := 0; j < len(activePlugins); j++ {
-			if p, err := plugin.Get(activePlugins[j]).Bootstrap(); err != nil {
+			if p, err := plugin.Get(activePlugins[j]).Bootstrap(Config.plugins["redis-jwt"]); err != nil {
 				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)
 			} else {
 				plugins = append(plugins, p)
@@ -49,7 +48,7 @@ func bootstrapPlugins(resources []*model.Resource) {
 }
 
 // Creates linked list (golang Ring) from weighted micros array per resource
-func bootstrapLoadBalancer(resources []*model.Resource) {
+func bootstrapLoadBalancer(resources []*Resource) {
 	for i := 0; i < len(resources); i++ {
 		micros := resources[i].Micros
 		flattenedMicros := make([]string, 0)

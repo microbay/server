@@ -11,15 +11,19 @@ const (
 
 type NoopPlugin struct{}
 
-func (p *NoopPlugin) Bootstrap() (Plugin, error) {
+func (p *NoopPlugin) Bootstrap(config map[string]interface{}) (Plugin, error) {
 	var err error
 	return p, err
 }
 
-func (p *NoopPlugin) Inbound(req *web.Request) {
+func (p *NoopPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
 	log.Debug("NoopPlugin::Inbound")
+	var err PluginError
+	return p, err
 }
 
-func (p *NoopPlugin) Outbound(req *web.Request) {
+func (p *NoopPlugin) Outbound(req *web.Request) (Plugin, error) {
 	log.Debug("NoopPlugin::Outbound")
+	var err error
+	return p, err
 }

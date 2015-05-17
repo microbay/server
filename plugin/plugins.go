@@ -6,8 +6,8 @@ import (
 )
 
 type Plugin interface {
-	Bootstrap() (Plugin, error)
-	Inbound(req *web.Request) (Plugin, error)
+	Bootstrap(config map[string]interface{}) (Plugin, error)
+	Inbound(req *web.Request) (Plugin, PluginError)
 }
 
 var pluginPool map[string]Plugin

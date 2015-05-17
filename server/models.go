@@ -1,7 +1,9 @@
-package model
+package server
 
 import (
 	"errors"
+	"github.com/SHMEDIALIMITED/apigo/plugin"
+	"github.com/SHMEDIALIMITED/apigo/server/backends"
 	"net/http"
 )
 
@@ -10,6 +12,7 @@ type API struct {
 	Portal    string      `json:"portal"`
 	Resources []*Resource `json:"resources"`
 	Key       []byte
+	plugins   map[string]map[string]interface{}
 }
 
 func (a *API) FindResourceByRequest(req *http.Request) (*Resource, error) {
@@ -33,4 +36,19 @@ func stringInSlice(a string, list []string) bool {
 		}
 	}
 	return false
+}
+
+type Resource struct {
+	Auth       string   `json:"auth"`
+	Path       string   `json:"path"`
+	Methods    []string `json:"methods"`
+	Micros     []Micro  `json:"micros"`
+	Plugins    []string `json:"plugins"`
+	Middleware []plugin.Plugin
+	Backends   backends.Backends // Load balancer
+}
+
+type Micro struct {
+	URL    string `json:"url"`
+	Weight int    `json:"weight"`
 }

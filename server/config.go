@@ -1,4 +1,4 @@
-package model
+package server
 
 import (
 	log "github.com/Sirupsen/logrus"
@@ -7,15 +7,21 @@ import (
 	"path/filepath"
 )
 
-func Load() API {
+func LoadConfig() API {
 	var api API
+	var plugins map[string]map[string]interface{}
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatal("Failed loading server.json ", err)
 	}
 	if err := viper.MarshalKey("api", &api); err != nil {
 		log.Fatal("Malformed api section in server.json ", err)
 	}
-	keyPath, _ := filepath.Abs("config/key.sample")
+	if err := viper.MarshalKey("plugins", &plugins); err != nil {
+		log.Fatal("Malformed plugins section in server.json ", err)
+	}
+	api.plugins = plugins
+
+	keyPath, _ := filepath.Abs("config/key.sample.pub")
 	key, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		log.Fatal("Failed loading private key file", viper.GetString("key"), err)
