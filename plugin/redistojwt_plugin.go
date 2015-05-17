@@ -9,6 +9,8 @@ import (
 	"net/http"
 	//"time"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 )
 
 const (
@@ -16,6 +18,7 @@ const (
 )
 
 type RedisToJWTPlugin struct {
+	key         []byte
 	connections *pool.Pool
 }
 
@@ -29,15 +32,17 @@ func (p *RedisToJWTPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
 		redis, _ := p.connections.Get()
 		_, er := redis.Cmd("get", token).Str()
 		if er != nil {
-			//err = errors.New("Invalid token")
+			log.Warn(">>>", er)
+			err = NewError(http.StatusUnauthorized, "Invalid token")
 		} else {
+			log.Warn(">>>>>>>")
 			jwToken, er := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 				// Don't forget to validate the alg is what you expect:
 				if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
 					return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
 				}
 
-				return "", nil
+				return p.key, nil
 			})
 
 			if er == nil && jwToken.Valid {
@@ -62,6 +67,14 @@ func (p *RedisToJWTPlugin) Bootstrap(config map[string]interface{}) (Plugin, err
 	if _, ok := config["connections"]; ok != true {
 		log.Fatal("RedisToJWTPlugin::Bootstrap failed to lookup 'connections' key in config ", config)
 	}
+
+	keyPath, _ := config["key"].(string)
+	keyAbsPath, _ := filepath.Abs(keyPath)
+	key, err := ioutil.ReadFile(keyAbsPath)
+	if err != nil {
+		log.Fatal("RedisToJWTPlugin::Bootstrap failed loading public key file", keyPath, err)
+	}
+	p.key = key
 	if p.connections == nil {
 		p.connections, err = pool.NewPool("tcp", config["host"].(string), int(config["connections"].(float64)))
 		if err != nil {
