@@ -46,7 +46,7 @@ func (p *RedisToJWTPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
 			if er == nil && jwToken.Valid {
 				log.Warn(">>> Success")
 			} else {
-				log.Warn("<<<")
+				log.Warn("<<<", jwToken.Valid)
 			}
 		}
 	}
