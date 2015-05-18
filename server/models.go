@@ -2,8 +2,8 @@ package server
 
 import (
 	"errors"
-	"github.com/SHMEDIALIMITED/apigo/plugin"
-	"github.com/SHMEDIALIMITED/apigo/server/backends"
+	"github.com/microbay/microbay/plugin"
+	"github.com/microbay/microbay/server/backends"
 	"net/http"
 )
 
@@ -11,7 +11,6 @@ type API struct {
 	Name      string      `json:"name"`
 	Portal    string      `json:"portal"`
 	Resources []*Resource `json:"resources"`
-	Key       []byte
 	plugins   map[string]map[string]interface{}
 }
 

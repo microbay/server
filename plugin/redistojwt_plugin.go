@@ -48,7 +48,6 @@ func (p *RedisToJWTPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
 }
 
 func (p *RedisToJWTPlugin) Bootstrap(config map[string]interface{}) (Plugin, error) {
-	log.Debug("RedisToJWTPlugin::Bootstrap ", config)
 	var err error
 	if _, ok := config["host"]; ok != true {
 		log.Fatal("RedisToJWTPlugin::Bootstrap failed to lookup 'host' key in config ", config)

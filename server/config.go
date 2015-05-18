@@ -3,8 +3,6 @@ package server
 import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"path/filepath"
 )
 
 func LoadConfig() API {
@@ -20,14 +18,6 @@ func LoadConfig() API {
 		log.Fatal("Malformed plugins section in server.json ", err)
 	}
 	api.plugins = plugins
-
-	keyPath, _ := filepath.Abs("config/key.sample.pub")
-	key, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		log.Fatal("Failed loading private key file", viper.GetString("key"), err)
-	}
-	api.Key = key
-	log.Debug("Config loaded")
 	return api
 }
 
@@ -39,7 +29,7 @@ func init() {
 
 func setConfigLocations() {
 	viper.SetConfigName("server")      // server.json file name
-	viper.AddConfigPath("/etc/apigo/") // deb package config location
+	viper.AddConfigPath("/etc/apigo/") // package config location
 	viper.AddConfigPath("config/")     //	local dev config location
 }
 

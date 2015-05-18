@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/SHMEDIALIMITED/apigo/model"
+	"github.com/microbay/microbay/model"
 	"testing"
 )
 

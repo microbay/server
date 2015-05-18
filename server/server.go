@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/SHMEDIALIMITED/apigo/plugin"
-	"github.com/SHMEDIALIMITED/apigo/server/backends"
+	"github.com/microbay/microbay/plugin"
+	"github.com/microbay/microbay/server/backends"
 	//"github.com/fvbock/endless" ----> Hot reloads
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"

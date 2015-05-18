@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/SHMEDIALIMITED/apigo/server"
+	"github.com/microbay/microbay/server"
 )
 
 func main() {

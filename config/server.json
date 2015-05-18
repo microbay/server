@@ -1,6 +1,6 @@
 {
 
-	"host" : "localhost:7777",
+  "host" : "localhost:7777",
 
   "plugins" : {
     "redis-jwt" : {
@@ -10,21 +10,21 @@
      }
   },
 
-	"api" : {
-		"name" : "Example API",
-		"portal" : "http://developers.example-api.com",
-		"resources" : [
-			{
-				"path" : "/hello",
+  "api" : {
+    "name" : "Example API",
+    "portal" : "http://developers.example-api.com",
+    "resources" : [
+      {
+        "path" : "/hello",
         "methods" : ["GET"],
         "plugins" : ["redis-jwt", "noop"],
-				"micros" : [
-					{
-						"url" : "http://localhost:9000",
-						"weight" : 1
-					}
-				]
-			}
-		]
-	}
+        "micros" : [
+          {
+            "url" : "http://localhost:9000",
+            "weight" : 1
+          }
+        ]
+      }
+    ]
+  }
 }
