@@ -32,13 +32,11 @@ func (p *RedisToJWTPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
 		redis, _ := p.connections.Get()
 		_, er := redis.Cmd("get", token).Str()
 		if er != nil {
-			log.Warn(">>>", er)
 			err = NewError(http.StatusUnauthorized, "Invalid token")
 		} else {
-			log.Warn(">>>>>>>")
 			jwToken, er := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 				// Don't forget to validate the alg is what you expect:
-				if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
 				}
 
@@ -46,7 +44,7 @@ func (p *RedisToJWTPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
 			})
 
 			if er == nil && jwToken.Valid {
-				log.Warn(">>>")
+				log.Warn(">>> Success")
 			} else {
 				log.Warn("<<<")
 			}
