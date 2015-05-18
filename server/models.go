@@ -23,7 +23,6 @@ func (a *API) FindResourceByRequest(req *http.Request) (*Resource, error) {
 			} else {
 				return nil, errors.New("Method")
 			}
-
 		}
 	}
 	return nil, errors.New("Resource")

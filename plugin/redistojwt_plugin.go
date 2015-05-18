@@ -14,39 +14,33 @@ import (
 )
 
 const (
-	PLUGIN_REDIS_TO_JWT string = "redis-jwt"
+	PLUGIN_REDIS_TO_JWT             string = "redis-jwt"
+	PLUGIN_REDIS_TO_JWT_HEADER      string = "Authorization"
+	PLUGIN_REDIS_TO_JWT_MSG_MISSING string = "Missing Authorization header"
+	PLUGIN_REDIS_TO_JWT_MSG_INVALID string = "Invalid token"
 )
 
 type RedisToJWTPlugin struct {
 	key         []byte
+	keyFunc     jwt.Keyfunc
 	connections *pool.Pool
 }
 
 func (p *RedisToJWTPlugin) Inbound(req *web.Request) (Plugin, PluginError) {
-	log.Debug("RedisToJWTPlugin::Inbound")
 	var err PluginError
-	token := req.Header.Get("Authorization")
+	token := req.Header.Get(PLUGIN_REDIS_TO_JWT_HEADER)
 	if token == "" {
-		err = NewError(http.StatusUnauthorized, "Missing Authorization header")
+		err = NewError(http.StatusUnauthorized, PLUGIN_REDIS_TO_JWT_MSG_MISSING)
 	} else {
 		redis, _ := p.connections.Get()
 		_, er := redis.Cmd("get", token).Str()
 		if er != nil {
-			err = NewError(http.StatusUnauthorized, "Invalid token")
+			err = NewError(http.StatusUnauthorized, PLUGIN_REDIS_TO_JWT_MSG_INVALID)
 		} else {
-			jwToken, er := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-				// Don't forget to validate the alg is what you expect:
-				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
-				}
+			jwToken, er := jwt.Parse(token, p.keyFunc)
 
-				return p.key, nil
-			})
-
-			if er == nil && jwToken.Valid {
-				log.Warn(">>> Success")
-			} else {
-				log.Warn("<<<", jwToken.Valid)
+			if er != nil || !jwToken.Valid {
+				err = NewError(http.StatusUnauthorized, PLUGIN_REDIS_TO_JWT_MSG_INVALID)
 			}
 		}
 	}
@@ -73,6 +67,12 @@ func (p *RedisToJWTPlugin) Bootstrap(config map[string]interface{}) (Plugin, err
 		log.Fatal("RedisToJWTPlugin::Bootstrap failed loading public key file", keyPath, err)
 	}
 	p.key = key
+	p.keyFunc = func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+		}
+		return p.key, nil
+	}
 	if p.connections == nil {
 		p.connections, err = pool.NewPool("tcp", config["host"].(string), int(config["connections"].(float64)))
 		if err != nil {

@@ -6,7 +6,7 @@
     "redis-jwt" : {
       "host" : "localhost:6379",
       "connections" : 10,
-      "key" : "config/key.sample.pub"
+      "key" : "config/key.sample"
      }
   },
 
