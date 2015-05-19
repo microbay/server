@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
+	"github.com/microbay/microbay/server/proxy"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 )
 
@@ -51,6 +51,16 @@ func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next
 	next(rw, req)
 }
 
+func ff(*http.Request, *http.Response) {
+
+}
+
+func init() {
+	filters[0] = ff
+}
+
+var filters []proxy.FilterFunc = make([]proxy.FilterFunc, 1)
+
 // Reverse proxies and load-balances backend micro services
 func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 
@@ -64,7 +74,7 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 		log.Fatal("URL failed to parse")
 	}
 
-	reverseProxy := httputil.NewSingleHostReverseProxy(serverUrl)
+	reverseProxy := proxy.New(serverUrl, filters)
 	//if c.Resource.Auth == REDIS_JWT {
 	//combinedHeaders := headerCombiner(reverseProxy, c.Session.JWT)
 	//}
