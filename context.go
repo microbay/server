@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
-	"github.com/microbay/microbay/server/proxy"
+	"github.com/microbay/server/proxy"
 	"net/http"
 	"net/url"
 )
@@ -42,24 +42,13 @@ func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Reque
 
 func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	for i := range c.Resource.Plugins {
-		if _, err := c.Resource.Middleware[i].Inbound(req); err != nil {
-			message, status := err.Error()
-			c.RenderError(rw, message, status)
+		if status, err := c.Resource.Middleware[i].Inbound(req); err != nil {
+			c.RenderError(rw, err.Error(), status)
 			return
 		}
 	}
 	next(rw, req)
 }
-
-func ff(*http.Request, *http.Response) {
-
-}
-
-func init() {
-	filters[0] = ff
-}
-
-var filters []proxy.FilterFunc = make([]proxy.FilterFunc, 1)
 
 // Reverse proxies and load-balances backend micro services
 func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
@@ -71,23 +60,10 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 
 	serverUrl, err := url.Parse(backend.String())
 	if err != nil {
-		log.Fatal("URL failed to parse")
+		log.Error("URL failed to parse")
 	}
 
-	reverseProxy := proxy.New(serverUrl, filters)
-	//if c.Resource.Auth == REDIS_JWT {
-	//combinedHeaders := headerCombiner(reverseProxy, c.Session.JWT)
-	//}
-
-	//log.Debug(">>>", c.Session.JWT)
-
-	// if c.Resource.Auth == REDIS_JWT {
-	//  c.RenderError(rw, "Invalid token", http.StatusUnauthorized)
-	// } else {
-	//  next(rw, req)
-	// }
-
-	req.URL.Path = ""
+	reverseProxy := proxy.New(serverUrl, &c.Resource.Middleware)
 	reverseProxy.ServeHTTP(rw, req.Request)
 }
 

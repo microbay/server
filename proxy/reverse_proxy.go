@@ -9,6 +9,7 @@ package proxy
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/microbay/plugin"
 	"io"
 	"net"
 	"net/http"
@@ -38,7 +39,7 @@ type ReverseProxy struct {
 
 	// Filters must be an array of functions which modify
 	// the response before the body is written
-	Filters []FilterFunc
+	Plugins *[]plugin.Interface
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -59,7 +60,7 @@ type ReverseProxy struct {
 
 // New returns a new ReverseProxy
 // It also allows to define a chain of filter functions to process the outgoing response(s)
-func New(target *url.URL, filters []FilterFunc) *ReverseProxy {
+func New(target *url.URL, plugins *[]plugin.Interface) *ReverseProxy {
 
 	targetQuery := target.RawQuery
 	director := func(req *http.Request) {
@@ -74,7 +75,7 @@ func New(target *url.URL, filters []FilterFunc) *ReverseProxy {
 	}
 	return &ReverseProxy{
 		Director: director,
-		Filters:  filters,
+		Plugins:  plugins,
 	}
 }
 
@@ -149,9 +150,9 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	defer res.Body.Close()
 
-	for _, filterFn := range p.Filters {
-		filterFn(req, res)
-	}
+	// for _, p := range *p.Plugins {
+	// 	//p.Outbound(rw.ResponseWriter, res)
+	// }
 
 	for _, h := range hopHeaders {
 		res.Header.Del(h)

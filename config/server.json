@@ -6,7 +6,7 @@
     "redis-jwt" : {
       "host" : "localhost:6379",
       "connections" : 10,
-      "key" : "config/key.sample"
+      "key" : "server/config/key.sample"
      }
   },
 
@@ -22,10 +22,6 @@
           {
             "url" : "http://localhost:9000",
             "weight" : 1
-          },
-          {
-            "url" : "http://httpbin.org/get",
-            "weight" : 10
           }
         ]
       }

@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/microbay/microbay/plugin"
-	"github.com/microbay/microbay/server/backends"
+	"github.com/microbay/plugin"
+	"github.com/microbay/server/backends"
 	//"github.com/fvbock/endless" ----> Hot reloads
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
@@ -35,7 +35,7 @@ func Start() {
 func bootstrapPlugins(resources []*Resource) {
 	for i := 0; i < len(resources); i++ {
 		activePlugins := resources[i].Plugins
-		plugins := make([]plugin.Plugin, 0)
+		plugins := make([]plugin.Interface, 0)
 		for j := 0; j < len(activePlugins); j++ {
 			if p, err := plugin.Get(activePlugins[j]).Bootstrap(Config.plugins["redis-jwt"]); err != nil {
 				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)

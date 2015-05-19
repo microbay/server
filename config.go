@@ -28,9 +28,9 @@ func init() {
 }
 
 func setConfigLocations() {
-	viper.SetConfigName("server")      // server.json file name
-	viper.AddConfigPath("/etc/apigo/") // package config location
-	viper.AddConfigPath("config/")     //	local dev config location
+	viper.SetConfigName("server")         // server.json file name
+	viper.AddConfigPath("/etc/apigo/")    // package config location
+	viper.AddConfigPath("server/config/") //	local dev config location
 }
 
 func setupEnvVars() {

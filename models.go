@@ -2,8 +2,8 @@ package server
 
 import (
 	"errors"
-	"github.com/microbay/microbay/plugin"
-	"github.com/microbay/microbay/server/backends"
+	"github.com/microbay/plugin"
+	"github.com/microbay/server/backends"
 	"net/http"
 )
 
@@ -42,7 +42,7 @@ type Resource struct {
 	Methods    []string `json:"methods"`
 	Micros     []Micro  `json:"micros"`
 	Plugins    []string `json:"plugins"`
-	Middleware []plugin.Plugin
+	Middleware []plugin.Interface
 	Backends   backends.Backends // Load balancer
 }
 
