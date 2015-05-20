@@ -48,7 +48,7 @@ func (p *RedisToJWTPlugin) Inbound(req *web.Request) (int, error) {
 	return http.StatusOK, err
 }
 
-func (p *RedisToJWTPlugin) Outbound(rw web.ResponseWriter, req *web.Request) (int, error) {
+func (p *RedisToJWTPlugin) Outbound(res *http.Response) (int, error) {
 	log.Warn("RedisToJWTPlugin::Outbound")
 	var err error
 	return http.StatusOK, err

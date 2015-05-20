@@ -97,6 +97,7 @@ var hopHeaders = []string{
 	"Te", // canonicalized version of "TE"
 	"Trailers",
 	"Transfer-Encoding",
+	"Accept-Encoding",
 	"Upgrade",
 }
 
@@ -150,9 +151,9 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	defer res.Body.Close()
 
-	// for _, p := range *p.Plugins {
-	// 	//p.Outbound(rw.ResponseWriter, res)
-	// }
+	for _, p := range *p.Plugins {
+		p.Outbound(res)
+	}
 
 	for _, h := range hopHeaders {
 		res.Header.Del(h)
