@@ -17,7 +17,7 @@
       {
         "path" : "/hello",
         "methods" : ["GET"],
-        "plugins" : ["redis-jwt", "noop"],
+        "plugins" : ["noop"],
         "micros" : [
           {
             "url" : "http://localhost:9000",

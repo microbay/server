@@ -2,8 +2,8 @@ package server
 
 import (
 	"errors"
-	"github.com/microbay/plugin"
 	"github.com/microbay/server/backends"
+	"github.com/microbay/server/plugin"
 	"net/http"
 )
 

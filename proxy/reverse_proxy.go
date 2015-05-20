@@ -9,7 +9,7 @@ package proxy
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/microbay/plugin"
+	"github.com/microbay/server/plugin"
 	"io"
 	"net"
 	"net/http"
