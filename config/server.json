@@ -2,11 +2,9 @@
 
   "host" : "localhost:7777",
 
-  "dbs" : {
-    "redis" : {
-      "host" : "localhost:6379",
-      "connections" : 10
-     }
+  "redis" : {
+    "host" : "localhost:6379",
+    "idle_connections" : 1
   },
 
   "api" : {
@@ -16,11 +14,7 @@
       {
         "path" : "/hello",
         "methods" : ["GET"],
-        "plugins" : [
-          {
-            "id" : "noop"
-          }
-        ],
+        "plugins" : ["redis-jwt"],
         "micros" : [
           {
             "url" : "http://localhost:9000",

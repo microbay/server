@@ -5,22 +5,25 @@ import (
 	"github.com/microbay/server/plugin"
 	//"github.com/fvbock/endless" ----> Hot reloads
 	log "github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/extra/pool"
 	"github.com/gocraft/web"
 	"github.com/spf13/viper"
 	"net/http"
 )
 
 var Config API
+var redisPool *pool.Pool
 
 // Creates Root and resources routes and starts listening
 func Start() {
 	Config = LoadConfig()
-	bootstrapDbs(Config)
+	connectRedis()
 	bootstrapLoadBalancer(Config.Resources)
 	bootstrapPlugins(Config.Resources)
 	rootRouter := web.New(Context{}).
 		Middleware(web.LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
+		Middleware((*Context).RedisMiddleware).
 		Middleware((*Context).ConfigMiddleware).
 		Middleware((*Context).RootMiddleware).
 		Middleware((*Context).ResourceConfigMiddleware).
@@ -33,7 +36,20 @@ func Start() {
 	}
 }
 
-func bootstrapDbs() {
+// Creates redis connection pool from config
+func connectRedis() {
+	config := viper.GetStringMap("redis")
+	var err error
+	if _, ok := config["host"]; ok != true {
+		log.Fatal("Redis::connectRedis - failed to lookup Redis 'host' key in config ", config)
+	}
+	if _, ok := config["idle_connections"]; ok != true {
+		log.Fatal("Redis::connectRedis - failed to lookup to lookup Redis 'idle_connections' key in config ", config)
+	}
+	redisPool, err = pool.NewPool("tcp", config["host"].(string), int(config["idle_connections"].(float64)))
+	if err != nil {
+		log.Fatal("Server::connectRedis - failed to connect to Redis on ", config["host"].(string))
+	}
 
 }
 

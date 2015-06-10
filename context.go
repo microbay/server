@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
+	"github.com/fzzy/radix/redis"
 	"github.com/gocraft/web"
 	"github.com/microbay/server/proxy"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 type Context struct {
 	Config   API
 	Resource *Resource
+	Redis    *redis.Client
 }
 
 // Assigns global config to context --> muset be a better way to pass that onto context
@@ -23,19 +25,13 @@ func (c *Context) ConfigMiddleware(rw web.ResponseWriter, req *web.Request, next
 
 // Redis Middleware
 func (c *Context) RedisMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-  if _, ok := config["host"]; ok != true {
-
-//    log.Fatal("RedisToJWTPlugin::Bootstrap failed to lookup 'host' key in config ", config)
-//  }
-//  if p.conns == nil {
-//    p.conns, err = pool.NewPool("tcp", config["host"].(string), int(config["connections"].(float64)))
-//    if err != nil {
-//      log.Fatal("RedisToJWTPlugin::Bootstrap failed to connect to Redis on ", config["host"].(string))
-//    }
-//  }
-//  var err error
-//  return p, err
-} 
+	var err error
+	if c.Redis, err = redisPool.Get(); err != nil {
+		log.Error("RedisMiddleware - Failed to get redis client from pool.", err)
+	}
+	defer redisPool.CarefullyPut(c.Redis, &err)
+	next(rw, req)
+}
 
 // 403 on API root
 func (c *Context) RootMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {

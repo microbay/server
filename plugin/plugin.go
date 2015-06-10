@@ -30,10 +30,6 @@ func New(id string) (Interface, error) {
 		log.Fatal("Could not retrieve ", id, " plugin from plugin registry.\n", "Plugins available: ", pluginRegistry)
 	}
 
-	log.Error(id)
-
-	log.Error(pluginRegistry[id])
-
 	// one way is to have a value of the type you want already
 	//a := 1
 	// reflect.New works kind of like the built-in function new
