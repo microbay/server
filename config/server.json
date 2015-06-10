@@ -2,11 +2,10 @@
 
   "host" : "localhost:7777",
 
-  "plugins" : {
-    "redis-jwt" : {
+  "dbs" : {
+    "redis" : {
       "host" : "localhost:6379",
-      "connections" : 10,
-      "key" : "server/config/key.sample"
+      "connections" : 10
      }
   },
 
@@ -17,7 +16,11 @@
       {
         "path" : "/hello",
         "methods" : ["GET"],
-        "plugins" : ["noop"],
+        "plugins" : [
+          {
+            "id" : "noop"
+          }
+        ],
         "micros" : [
           {
             "url" : "http://localhost:9000",

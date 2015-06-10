@@ -149,7 +149,6 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	defer res.Body.Close()
 
 	for _, p := range *p.Plugins {
 		p.Outbound(res)
@@ -160,6 +159,8 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	copyHeader(rw.Header(), res.Header)
+
+	defer res.Body.Close()
 
 	rw.WriteHeader(res.StatusCode)
 	p.copyResponse(rw, res.Body)

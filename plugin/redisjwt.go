@@ -1,16 +1,14 @@
 package plugin
 
 import (
-	//"encoding/json"
+	"errors"
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/fzzy/radix/extra/pool"
 	"github.com/gocraft/web"
-	"net/http"
-	//"time"
-	"errors"
-	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 )
 

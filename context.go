@@ -21,6 +21,22 @@ func (c *Context) ConfigMiddleware(rw web.ResponseWriter, req *web.Request, next
 	next(rw, req)
 }
 
+// Redis Middleware
+func (c *Context) RedisMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+  if _, ok := config["host"]; ok != true {
+
+//    log.Fatal("RedisToJWTPlugin::Bootstrap failed to lookup 'host' key in config ", config)
+//  }
+//  if p.conns == nil {
+//    p.conns, err = pool.NewPool("tcp", config["host"].(string), int(config["connections"].(float64)))
+//    if err != nil {
+//      log.Fatal("RedisToJWTPlugin::Bootstrap failed to connect to Redis on ", config["host"].(string))
+//    }
+//  }
+//  var err error
+//  return p, err
+} 
+
 // 403 on API root
 func (c *Context) RootMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	if req.URL.Path == "/" {

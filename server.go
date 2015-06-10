@@ -15,6 +15,7 @@ var Config API
 // Creates Root and resources routes and starts listening
 func Start() {
 	Config = LoadConfig()
+	bootstrapDbs(Config)
 	bootstrapLoadBalancer(Config.Resources)
 	bootstrapPlugins(Config.Resources)
 	rootRouter := web.New(Context{}).
@@ -32,15 +33,21 @@ func Start() {
 	}
 }
 
+func bootstrapDbs() {
+
+}
+
 func bootstrapPlugins(resources []*Resource) {
 	for i := 0; i < len(resources); i++ {
 		activePlugins := resources[i].Plugins
 		plugins := make([]plugin.Interface, 0)
 		for j := 0; j < len(activePlugins); j++ {
-			if p, err := plugin.Get(activePlugins[j]).Bootstrap(Config.plugins["redis-jwt"]); err != nil {
+
+			n := activePlugins[j]
+			if _, err := plugin.New(n); err != nil {
 				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)
 			} else {
-				plugins = append(plugins, p)
+				plugins = append(plugins, &plugin.NoopPlugin{})
 			}
 		}
 		resources[i].Middleware = plugins
