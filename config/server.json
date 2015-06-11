@@ -1,12 +1,4 @@
 {
-
-  "host" : "localhost:7777",
-
-  "redis" : {
-    "host" : "localhost:6379",
-    "idle_connections" : 1
-  },
-
   "api" : {
     "name" : "Example API",
     "portal" : "http://developers.example-api.com",
@@ -14,7 +6,7 @@
       {
         "path" : "/hello",
         "methods" : ["GET"],
-        "plugins" : ["redis-jwt"],
+        "plugins" : ["ratelimiter"],
         "micros" : [
           {
             "url" : "http://localhost:9000",

@@ -1,23 +1,24 @@
 package server
 
 import (
+	"github.com/garyburd/redigo/redis"
 	"github.com/microbay/server/backends"
 	"github.com/microbay/server/plugin"
 	//"github.com/fvbock/endless" ----> Hot reloads
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/extra/pool"
 	"github.com/gocraft/web"
 	"github.com/spf13/viper"
 	"net/http"
 )
 
 var Config API
-var redisPool *pool.Pool
+var redisPool *redis.Pool
 
 // Creates Root and resources routes and starts listening
 func Start() {
 	Config = LoadConfig()
-	connectRedis()
+	redisPool = connectRedis()
+	defer redisPool.Close()
 	bootstrapLoadBalancer(Config.Resources)
 	bootstrapPlugins(Config.Resources)
 	rootRouter := web.New(Context{}).
@@ -34,23 +35,20 @@ func Start() {
 	if err != nil {
 		log.Fatal("Failed to start server ", err)
 	}
+
 }
-
-// Creates redis connection pool from config
-func connectRedis() {
-	config := viper.GetStringMap("redis")
-	var err error
-	if _, ok := config["host"]; ok != true {
-		log.Fatal("Redis::connectRedis - failed to lookup Redis 'host' key in config ", config)
+func connectRedis() *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:   80,
+		MaxActive: 12000, // max number of connections
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", viper.GetString("redis_host"))
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			return c, err
+		},
 	}
-	if _, ok := config["idle_connections"]; ok != true {
-		log.Fatal("Redis::connectRedis - failed to lookup to lookup Redis 'idle_connections' key in config ", config)
-	}
-	redisPool, err = pool.NewPool("tcp", config["host"].(string), int(config["idle_connections"].(float64)))
-	if err != nil {
-		log.Fatal("Server::connectRedis - failed to connect to Redis on ", config["host"].(string))
-	}
-
 }
 
 func bootstrapPlugins(resources []*Resource) {
@@ -58,12 +56,15 @@ func bootstrapPlugins(resources []*Resource) {
 		activePlugins := resources[i].Plugins
 		plugins := make([]plugin.Interface, 0)
 		for j := 0; j < len(activePlugins); j++ {
-
 			n := activePlugins[j]
-			if _, err := plugin.New(n); err != nil {
+			if p, err := plugin.New(n); err != nil {
 				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)
 			} else {
-				plugins = append(plugins, &plugin.NoopPlugin{})
+				if rp, err := p.Bootstrap(&plugin.Config{redisPool}); err != nil {
+					log.Fatal("Failed to bootstrap plugin ", err)
+				} else {
+					plugins = append(plugins, rp)
+				}
 			}
 		}
 		resources[i].Middleware = plugins

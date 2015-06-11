@@ -34,15 +34,17 @@ func setConfigLocations() {
 }
 
 func setupEnvVars() {
-	viper.SetEnvPrefix("apigo")
+	viper.SetEnvPrefix("mb")
 	viper.BindEnv("env")
 	viper.SetDefault("env", "development")
 	viper.BindEnv("loglevel")
 	viper.SetDefault("loglevel", "debug")
 	viper.BindEnv("host")
 	viper.SetDefault("host", "localhost:7777")
-	viper.BindEnv("redis")
-	viper.SetDefault("redis", "localhost:6379")
+	viper.BindEnv("redis_host")
+	viper.SetDefault("redis_host", "localhost:6379")
+	viper.BindEnv("redis_password")
+	viper.SetDefault("redis_password", "")
 }
 
 func initLogLevel() {

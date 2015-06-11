@@ -16,7 +16,7 @@ const (
 
 type TransformerPlugin struct{}
 
-func (p *TransformerPlugin) Bootstrap(config map[string]interface{}) (Interface, error) {
+func (p *TransformerPlugin) Bootstrap(config *Config) (Interface, error) {
 	log.Warn("TransformerPlugin::Bootstrap")
 	var err error
 	return p, err

@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 	log "github.com/Sirupsen/logrus"
-	"github.com/fzzy/radix/redis"
+	"github.com/garyburd/redigo/redis"
 	"github.com/gocraft/web"
 	"github.com/microbay/server/proxy"
 	"net/http"
@@ -14,7 +14,7 @@ import (
 type Context struct {
 	Config   API
 	Resource *Resource
-	Redis    *redis.Client
+	Redis    redis.Conn
 }
 
 // Assigns global config to context --> muset be a better way to pass that onto context
@@ -25,11 +25,8 @@ func (c *Context) ConfigMiddleware(rw web.ResponseWriter, req *web.Request, next
 
 // Redis Middleware
 func (c *Context) RedisMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
-	var err error
-	if c.Redis, err = redisPool.Get(); err != nil {
-		log.Error("RedisMiddleware - Failed to get redis client from pool.", err)
-	}
-	defer redisPool.CarefullyPut(c.Redis, &err)
+	c.Redis = redisPool.Get()
+	defer c.Redis.Close()
 	next(rw, req)
 }
 

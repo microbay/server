@@ -12,7 +12,7 @@ const (
 
 type NoopPlugin struct{}
 
-func (p *NoopPlugin) Bootstrap(config map[string]interface{}) (Interface, error) {
+func (p *NoopPlugin) Bootstrap(config *Config) (Interface, error) {
 	log.Warn("NoopPlugin::Bootstrap")
 	var err error
 	return p, err
