@@ -57,11 +57,14 @@ func bootstrapPlugins(resources []*Resource) {
 		plugins := make([]plugin.Interface, 0)
 		for j := 0; j < len(activePlugins); j++ {
 			n := activePlugins[j]
-			if p, err := plugin.New(n); err != nil {
+			if _, ok := n["id"]; ok != true {
+				log.Fatal("Plugin configs need and id")
+			}
+			if p, err := plugin.New(n["id"].(string)); err != nil {
 				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)
 			} else {
-				if rp, err := p.Bootstrap(&plugin.Config{redisPool}); err != nil {
-					log.Fatal("Failed to bootstrap plugin ", err)
+				if rp, err := p.Bootstrap(&plugin.Config{redisPool, n}); err != nil {
+					log.Fatal(err)
 				} else {
 					plugins = append(plugins, rp)
 				}

@@ -22,7 +22,7 @@ func (p *TransformerPlugin) Bootstrap(config *Config) (Interface, error) {
 	return p, err
 }
 
-func (p *TransformerPlugin) Inbound(req *web.Request) (int, error) {
+func (p *TransformerPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (int, error) {
 	log.Warn("TransformerPlugin::Inbound")
 	var err error
 	return http.StatusOK, err

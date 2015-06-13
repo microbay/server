@@ -37,11 +37,11 @@ func stringInSlice(a string, list []string) bool {
 }
 
 type Resource struct {
-	Auth       string   `json:"auth"`
-	Path       string   `json:"path"`
-	Methods    []string `json:"methods"`
-	Micros     []Micro  `json:"micros"`
-	Plugins    []string `json:"plugins"`
+	Auth       string                   `json:"auth"`
+	Path       string                   `json:"path"`
+	Methods    []string                 `json:"methods"`
+	Micros     []Micro                  `json:"micros"`
+	Plugins    []map[string]interface{} `json:"plugins"`
 	Middleware []plugin.Interface
 	Backends   backends.Backends // Load balancer
 }

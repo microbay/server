@@ -18,7 +18,7 @@ func (p *NoopPlugin) Bootstrap(config *Config) (Interface, error) {
 	return p, err
 }
 
-func (p *NoopPlugin) Inbound(req *web.Request) (int, error) {
+func (p *NoopPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (int, error) {
 	log.Warn("NoopPlugin::Inbound")
 	var err error
 	return http.StatusOK, err

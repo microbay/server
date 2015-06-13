@@ -10,12 +10,13 @@ import (
 )
 
 type Config struct {
-	RedisPool *redis.Pool
+	RedisPool  *redis.Pool
+	Properties map[string]interface{}
 }
 
 type Interface interface {
 	Bootstrap(config *Config) (Interface, error)
-	Inbound(req *web.Request) (int, error)
+	Inbound(rw web.ResponseWriter, req *web.Request) (int, error)
 	Outbound(res *http.Response) (int, error)
 }
 
@@ -25,8 +26,8 @@ func init() {
 	pluginRegistry = make(map[string]reflect.Type)
 	//pluginRegistry[PLUGIN_REDIS_TO_JWT] = reflect.TypeOf(RedisToJWTPlugin{})
 	pluginRegistry[PLUGIN_RATELIMITER] = reflect.TypeOf(RateLimiterPlugin{})
-	pluginRegistry[PLUGIN_NOOP] = reflect.TypeOf(NoopPlugin{})
-	pluginRegistry[PLUGIN_TRANSFORMER] = reflect.TypeOf(TransformerPlugin{})
+	//pluginRegistry[PLUGIN_NOOP] = reflect.TypeOf(NoopPlugin{})
+	//pluginRegistry[PLUGIN_TRANSFORMER] = reflect.TypeOf(TransformerPlugin{})
 }
 
 func New(id string) (Interface, error) {
