@@ -17,6 +17,32 @@
             "weight" : 1
           }
         ]
+      },
+      {
+        "path" : "/people",
+        "methods" : ["GET"],
+        "plugins" : [{
+            "id" : "ratelimiter",
+            "interval" : 10,
+            "max_req_per_interval" : 3  
+        }],
+        "micros" : [
+          {
+            "url" : "http://localhost:9000/users",
+            "weight" : 1
+          }
+        ]
+      },
+      {
+        "path" : "/people/:person",
+        "methods" : ["GET"],
+        "plugins" : [],
+        "micros" : [
+          {
+            "url" : "http://localhost:9000/users/:person",
+            "weight" : 1
+          }
+        ]
       }
     ]
   }

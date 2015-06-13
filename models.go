@@ -2,9 +2,11 @@ package server
 
 import (
 	"errors"
+	log "github.com/Sirupsen/logrus"
 	"github.com/microbay/server/backends"
 	"github.com/microbay/server/plugin"
 	"net/http"
+	"regexp"
 )
 
 type API struct {
@@ -15,10 +17,11 @@ type API struct {
 }
 
 func (a *API) FindResourceByRequest(req *http.Request) (*Resource, error) {
-	for _, resources := range a.Resources {
-		if resources.Path == req.URL.Path {
-			if stringInSlice(req.Method, resources.Methods) {
-				return resources, nil
+	for _, resource := range a.Resources {
+		log.Warn(resource.Regex)
+		if resource.Regex.MatchString(req.URL.Path) == true {
+			if stringInSlice(req.Method, resource.Methods) {
+				return resource, nil
 			} else {
 				return nil, errors.New("Method")
 			}
@@ -44,6 +47,7 @@ type Resource struct {
 	Plugins    []map[string]interface{} `json:"plugins"`
 	Middleware []plugin.Interface
 	Backends   backends.Backends // Load balancer
+	Regex      *regexp.Regexp
 }
 
 type Micro struct {

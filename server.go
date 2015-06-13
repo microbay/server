@@ -5,10 +5,13 @@ import (
 	"github.com/microbay/server/backends"
 	"github.com/microbay/server/plugin"
 	//"github.com/fvbock/endless" ----> Hot reloads
+	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
 	"github.com/spf13/viper"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 var Config API
@@ -19,6 +22,7 @@ func Start() {
 	Config = LoadConfig()
 	redisPool = connectRedis()
 	defer redisPool.Close()
+	bootstrapRoutes(Config.Resources)
 	bootstrapLoadBalancer(Config.Resources)
 	bootstrapPlugins(Config.Resources)
 	rootRouter := web.New(Context{}).
@@ -37,6 +41,36 @@ func Start() {
 	}
 
 }
+
+// Thanks to https://gowalker.org/github.com/azer/url-router#PathToRegex
+func PathToRegex(path string) (*regexp.Regexp, []string) {
+	pattern, _ := regexp.Compile(":([A-Za-z0-9]+)")
+	matches := pattern.FindAllStringSubmatch(path, -1)
+	keys := []string{}
+
+	for i := range matches {
+		keys = append(keys, matches[i][1])
+	}
+
+	str := fmt.Sprintf("^%s\\/?$", strings.Replace(path, "/", "\\/", -1))
+
+	str = pattern.ReplaceAllString(str, "([^\\/]+)")
+	str = strings.Replace(str, ".", "\\.", -1)
+
+	regex, _ := regexp.Compile(str)
+
+	return regex, keys
+}
+
+func bootstrapRoutes(resources []*Resource) {
+	for _, resource := range resources {
+		regex, s := PathToRegex(resource.Path)
+		resource.Regex = regex
+		log.Warn(s)
+
+	}
+}
+
 func connectRedis() *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:   80,
