@@ -69,6 +69,9 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 		log.Error("no backend for client %s", req.RemoteAddr)
 	}
 
+	u := backend.String()
+	params := c.Resource.Params(u)
+
 	serverUrl, err := url.Parse(backend.String())
 	if err != nil {
 		log.Error("URL failed to parse")

@@ -48,6 +48,22 @@ type Resource struct {
 	Middleware []plugin.Interface
 	Backends   backends.Backends // Load balancer
 	Regex      *regexp.Regexp
+	Keys       []string
+}
+
+type Params map[string]string
+
+func (r *Resource) Params(url string) Params {
+	match := r.Regex.FindAllStringSubmatch(url, -1)
+	//log.Warn(url)
+	result := make(Params)
+	for i := range match {
+		if len(r.Keys) <= i {
+			break
+		}
+		//result[r.Keys[i]] = match[i]
+	}
+	return result
 }
 
 type Micro struct {

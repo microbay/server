@@ -64,10 +64,9 @@ func PathToRegex(path string) (*regexp.Regexp, []string) {
 
 func bootstrapRoutes(resources []*Resource) {
 	for _, resource := range resources {
-		regex, s := PathToRegex(resource.Path)
+		regex, keys := PathToRegex(resource.Path)
 		resource.Regex = regex
-		log.Warn(s)
-
+		resource.Keys = keys
 	}
 }
 
