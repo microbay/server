@@ -4,38 +4,44 @@
     "portal" : "http://developers.example-api.com",
     "resources" : [
       {
-        "path" : "/people",
-        "methods" : ["POST", "GET"],
-        "plugins" : [],
-        "micros" : [
-          {
-            "url" : "http://localhost:9000/users",
-            "weight" : 1
-          }
-        ]
-      },
-
-      {
         "path" : "/people/:person",
-        "methods" : ["GET"],
+        "methods" : ["GET", "PUT", "HEAD"],
         "plugins" : [],
-        "micros" : [
-          {
-            "url" : "http://localhost:9000/users/:person",
-            "weight" : 1
-          }
-        ]
+        "micros" : {
+          "h" : [
+            {
+              "url" : "http://localhost:9000/users/:person",
+              "weight" : 1
+            },
+            {
+              "url" : "http://localhost:9000/users/:person",
+              "weight" : 1
+            },
+            {
+              "url" : "http://localhost:9000/users/:person",
+              "weight" : 1
+            }
+          ]
+        }
       },
       {
-        "path" : "/hello",
+        "path" : "/batch",
         "methods" : ["GET"],
         "plugins" : [],
-        "micros" : [
-          {
-            "url" : "http://localhost:9000",
-            "weight" : 1
-          }
-        ]
+        "micros" : {
+          "a" : [
+            {
+              "url" : "http://localhost:9000/a?n=1",
+              "weight" : 1
+            }
+          ],
+          "b" : [
+            {
+              "url" : "http://localhost:9000/b?n=1",
+              "weight" : 1
+            }
+          ]
+        }
       }
     ]
   }

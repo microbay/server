@@ -112,13 +112,19 @@ func bootstrapPlugins(resources []*Resource) {
 // Creates linked list (golang Ring) from weighted micros array per resource
 func bootstrapLoadBalancer(resources []*Resource) {
 	for i := 0; i < len(resources); i++ {
-		micros := resources[i].Micros
-		flattenedMicros := make([]string, 0)
-		for j := 0; j < len(micros); j++ {
-			for n := 0; n < micros[j].Weight; n++ {
-				flattenedMicros = append(flattenedMicros, micros[j].URL)
+		resources[i].Backends = make(map[string]backends.Backends)
+		for batchKey := range resources[i].Micros {
+			micros := resources[i].Micros[batchKey]
+			flattenedMicros := make([]string, 0)
+			for j := 0; j < len(micros); j++ {
+				for n := 0; n < micros[j].Weight; n++ {
+					flattenedMicros = append(flattenedMicros, micros[j].URL)
+				}
 			}
+
+			h := backends.Build("round-robin", flattenedMicros)
+			log.Error(h)
+			resources[i].Backends[batchKey] = h
 		}
-		resources[i].Backends = backends.Build("round-robin", flattenedMicros)
 	}
 }

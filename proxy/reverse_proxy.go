@@ -67,6 +67,7 @@ func New(target *url.URL, plugins *[]plugin.Interface) *ReverseProxy {
 		req.URL.Scheme = target.Scheme
 		req.URL.Host = target.Host
 		req.URL.Path = target.Path
+		log.Info(">>>>>", req.URL.Path)
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
 		} else {
@@ -101,7 +102,7 @@ var hopHeaders = []string{
 	"Upgrade",
 }
 
-func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) (*http.Response, error) {
 	transport := p.Transport
 	if transport == nil {
 		transport = http.DefaultTransport
@@ -147,7 +148,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Printf("http: proxy error: %v", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		return
+		return res, err
 	}
 
 	for _, p := range *p.Plugins {
@@ -161,9 +162,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	copyHeader(rw.Header(), res.Header)
 
 	defer res.Body.Close()
-
-	rw.WriteHeader(res.StatusCode)
-	p.copyResponse(rw, res.Body)
+	return res, err
 }
 
 func (p *ReverseProxy) copyResponse(dst io.Writer, src io.Reader) {

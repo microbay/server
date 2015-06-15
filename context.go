@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 )
 
 // Root context
@@ -73,21 +74,36 @@ func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next
 // Reverse proxies and load-balances backend micro services
 func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 
-	backend := c.Resource.Backends.Choose()
-	if backend == nil {
-		log.Error("no backend for client %s", req.RemoteAddr)
+	var wg sync.WaitGroup
+
+	numBatches := len(c.Resource.Backends)
+
+	respones := make(chan *http.Response, numBatches)
+
+	for batchKey := range c.Resource.Backends {
+		wg.Add(1)
+		go func(key string) {
+			defer wg.Done()
+			backend := c.Resource.Backends[key].Choose()
+			u := backend.String()
+			for key := range c.Params {
+				u = strings.Replace(u, ":"+key, c.Params[key], 1)
+			}
+			serverUrl, err := url.Parse(u)
+			if err != nil {
+				log.Error("URL failed to parse")
+			}
+			log.Info("URL >>> ", serverUrl)
+			reverseProxy := proxy.New(serverUrl, &c.Resource.Middleware)
+			res, _ := reverseProxy.ServeHTTP(rw, req.Request)
+			respones <- res
+		}(batchKey)
 	}
 
-	u := backend.String()
-	for key := range c.Params {
-		u = strings.Replace(u, ":"+key, c.Params[key], 1)
-	}
+	wg.Wait()
+	close(respones)
 
-	serverUrl, err := url.Parse(u)
-	if err != nil {
-		log.Error("URL failed to parse")
+	for res := range respones {
+		log.Warn(res)
 	}
-
-	reverseProxy := proxy.New(serverUrl, &c.Resource.Middleware)
-	reverseProxy.ServeHTTP(rw, req.Request)
 }

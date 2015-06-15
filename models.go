@@ -42,10 +42,10 @@ type Resource struct {
 	Auth       string                   `json:"auth"`
 	Path       string                   `json:"path"`
 	Methods    []string                 `json:"methods"`
-	Micros     []Micro                  `json:"micros"`
+	Micros     map[string][]Micro       `json:"micros"`
 	Plugins    []map[string]interface{} `json:"plugins"`
 	Middleware []plugin.Interface
-	Backends   backends.Backends // Load balancer
+	Backends   map[string]backends.Backends // Load balancer
 	Regex      *regexp.Regexp
 	Keys       []string
 }
