@@ -4,28 +4,9 @@
     "portal" : "http://developers.example-api.com",
     "resources" : [
       {
-        "path" : "/hello",
-        "methods" : ["GET"],
-        "plugins" : [{
-            "id" : "ratelimiter",
-            "interval" : 10,
-            "max_req_per_interval" : 1  
-        }],
-        "micros" : [
-          {
-            "url" : "http://localhost:9000",
-            "weight" : 1
-          }
-        ]
-      },
-      {
         "path" : "/people",
-        "methods" : ["GET"],
-        "plugins" : [{
-            "id" : "ratelimiter",
-            "interval" : 10,
-            "max_req_per_interval" : 3  
-        }],
+        "methods" : ["POST", "GET"],
+        "plugins" : [],
         "micros" : [
           {
             "url" : "http://localhost:9000/users",
@@ -33,6 +14,7 @@
           }
         ]
       },
+
       {
         "path" : "/people/:person",
         "methods" : ["GET"],
@@ -40,6 +22,17 @@
         "micros" : [
           {
             "url" : "http://localhost:9000/users/:person",
+            "weight" : 1
+          }
+        ]
+      },
+      {
+        "path" : "/hello",
+        "methods" : ["GET"],
+        "plugins" : [],
+        "micros" : [
+          {
+            "url" : "http://localhost:9000",
             "weight" : 1
           }
         ]

@@ -9,6 +9,7 @@ import (
 	"github.com/microbay/server/proxy"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // Root context
@@ -17,6 +18,7 @@ type Context struct {
 	Config   API
 	Resource *Resource
 	Redis    redis.Conn
+	Params   core.URLParams
 }
 
 // Assigns global config to context --> muset be a better way to pass that onto context
@@ -45,8 +47,15 @@ func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Reque
 	var err error
 	c.Resource, err = c.Config.FindResourceByRequest(req.Request)
 	if err != nil {
-		c.RenderError(rw, errors.New("Access Forbidden"), "", http.StatusForbidden)
+		if err.Error() == "Method" {
+			rw.Header().Set("Allow", strings.Join(c.Resource.Methods, ", "))
+			c.RenderError(rw, errors.New("Method Not Allowed"), "", http.StatusMethodNotAllowed)
+		} else {
+			c.RenderError(rw, errors.New("Access Forbidden"), "", http.StatusForbidden)
+		}
+
 	} else {
+		c.Params = core.Params(req.URL.Path, c.Resource.Regex, c.Resource.Keys)
 		next(rw, req)
 	}
 }
@@ -70,23 +79,15 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 	}
 
 	u := backend.String()
-	params := c.Resource.Params(u)
+	for key := range c.Params {
+		u = strings.Replace(u, ":"+key, c.Params[key], 1)
+	}
 
-	serverUrl, err := url.Parse(backend.String())
+	serverUrl, err := url.Parse(u)
 	if err != nil {
 		log.Error("URL failed to parse")
 	}
 
 	reverseProxy := proxy.New(serverUrl, &c.Resource.Middleware)
 	reverseProxy.ServeHTTP(rw, req.Request)
-}
-
-// Append additional query params to the original URL query.
-func headerCombiner(handler http.Handler, token string) http.Handler {
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Set("Authorization", token)
-		r.Header.Set("X-Premise", "-2287340764")
-		handler.ServeHTTP(w, r)
-	})
 }

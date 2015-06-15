@@ -67,7 +67,9 @@ func bootstrapRoutes(resources []*Resource) {
 		regex, keys := PathToRegex(resource.Path)
 		resource.Regex = regex
 		resource.Keys = keys
+		log.Error(resource.Regex, resource.Keys)
 	}
+
 }
 
 func connectRedis() *redis.Pool {
