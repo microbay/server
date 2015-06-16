@@ -1,12 +1,14 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gocraft/web"
 	"github.com/microbay/server/core"
 	"github.com/microbay/server/proxy"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,39 +73,71 @@ func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next
 	next(rw, req)
 }
 
+type CompoundResponse struct {
+	Response *http.Response
+	Error    error
+	Key      string
+}
+
 // Reverse proxies and load-balances backend micro services
 func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 
-	var wg sync.WaitGroup
+	numRequests := len(c.Resource.Backends)
 
-	numBatches := len(c.Resource.Backends)
-
-	respones := make(chan *http.Response, numBatches)
-
-	for batchKey := range c.Resource.Backends {
-		wg.Add(1)
-		go func(key string) {
-			defer wg.Done()
-			backend := c.Resource.Backends[key].Choose()
-			u := backend.String()
+	// Proxy if single request
+	if numRequests == 1 {
+		for batchKey := range c.Resource.Backends {
+			u := c.Resource.Backends[batchKey].Choose().String()
 			for key := range c.Params {
 				u = strings.Replace(u, ":"+key, c.Params[key], 1)
 			}
 			serverUrl, err := url.Parse(u)
 			if err != nil {
 				log.Error("URL failed to parse")
+				c.RenderError(rw, errors.New("Internal Server Error"), "", http.StatusInternalServerError)
 			}
-			log.Info("URL >>> ", serverUrl)
 			reverseProxy := proxy.New(serverUrl, &c.Resource.Middleware)
-			res, _ := reverseProxy.ServeHTTP(rw, req.Request)
-			respones <- res
+			res, err := reverseProxy.ServeHTTP(req.Request)
+			if err != nil {
+				c.RenderError(rw, err, "", http.StatusInternalServerError)
+			} else {
+				reverseProxy.CopyAndClose(rw, res)
+			}
+		}
+		return
+	}
+
+	// Otherwise compound backend calls
+	var wg sync.WaitGroup
+	respones := make(chan *CompoundResponse, numRequests)
+	for batchKey := range c.Resource.Backends {
+		wg.Add(1)
+		go func(batchKey string) {
+			defer wg.Done()
+			u := c.Resource.Backends[batchKey].Choose().String()
+			for key := range c.Params {
+				u = strings.Replace(u, ":"+key, c.Params[key], 1)
+			}
+			res, err := http.Get(u)
+			respones <- &CompoundResponse{res, err, batchKey}
 		}(batchKey)
 	}
 
 	wg.Wait()
 	close(respones)
 
-	for res := range respones {
-		log.Warn(res)
+	// Create Compound response
+	output := make(map[string]interface{})
+	for composite := range respones {
+		defer composite.Response.Body.Close()
+		body, err := ioutil.ReadAll(composite.Response.Body)
+		var data interface{}
+		err = json.Unmarshal(body, &data)
+		if err != nil {
+			c.RenderError(rw, errors.New("Internal Server Error"), "", http.StatusInternalServerError)
+			return
+		}
+		output[composite.Key] = data
 	}
+	c.Render(rw, output, http.StatusOK)
 }

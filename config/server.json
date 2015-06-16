@@ -8,7 +8,7 @@
         "methods" : ["GET", "PUT", "HEAD"],
         "plugins" : [],
         "micros" : {
-          "h" : [
+          "_" : [
             {
               "url" : "http://localhost:9000/users/:person",
               "weight" : 1

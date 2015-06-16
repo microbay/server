@@ -62,16 +62,6 @@ func PathToRegex(path string) (*regexp.Regexp, []string) {
 	return regex, keys
 }
 
-func bootstrapRoutes(resources []*Resource) {
-	for _, resource := range resources {
-		regex, keys := PathToRegex(resource.Path)
-		resource.Regex = regex
-		resource.Keys = keys
-		log.Error(resource.Regex, resource.Keys)
-	}
-
-}
-
 func connectRedis() *redis.Pool {
 	return &redis.Pool{
 		MaxIdle:   80,
@@ -83,6 +73,14 @@ func connectRedis() *redis.Pool {
 			}
 			return c, err
 		},
+	}
+}
+
+func bootstrapRoutes(resources []*Resource) {
+	for _, resource := range resources {
+		regex, keys := PathToRegex(resource.Path)
+		resource.Regex = regex
+		resource.Keys = keys
 	}
 }
 
@@ -121,9 +119,7 @@ func bootstrapLoadBalancer(resources []*Resource) {
 					flattenedMicros = append(flattenedMicros, micros[j].URL)
 				}
 			}
-
 			h := backends.Build("round-robin", flattenedMicros)
-			log.Error(h)
 			resources[i].Backends[batchKey] = h
 		}
 	}
