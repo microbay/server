@@ -26,7 +26,7 @@ func init() {
 	pluginRegistry = make(map[string]reflect.Type)
 	//pluginRegistry[PLUGIN_REDIS_TO_JWT] = reflect.TypeOf(RedisToJWTPlugin{})
 	pluginRegistry[PLUGIN_RATELIMITER] = reflect.TypeOf(RateLimiterPlugin{})
-	//pluginRegistry[PLUGIN_NOOP] = reflect.TypeOf(NoopPlugin{})
+	pluginRegistry[PLUGIN_NOOP] = reflect.TypeOf(NoopPlugin{})
 	//pluginRegistry[PLUGIN_TRANSFORMER] = reflect.TypeOf(TransformerPlugin{})
 }
 

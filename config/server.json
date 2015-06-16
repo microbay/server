@@ -6,7 +6,13 @@
       {
         "path" : "/people/:person",
         "methods" : ["GET", "PUT", "HEAD"],
-        "plugins" : [],
+        "plugins" : [
+          {
+            "id" : "ratelimiter",
+            "interval" : 10,
+            "max_req_per_interval" : 5
+          }
+        ],
         "micros" : {
           "_" : [
             {

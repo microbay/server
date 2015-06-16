@@ -13,6 +13,18 @@ import (
 	"time"
 )
 
+/**
+  Rate limiter Plugin based on rolling window.
+  Thanks to https://engineering.classdojo.com/blog/2015/02/06/rolling-rate-limiter/
+
+  Exmaple config:
+  {
+    "id" : "ratelimiter",
+    "interval" : 10,
+    "max_req_per_interval" : 5
+  }
+*/
+
 const (
 	PLUGIN_RATELIMITER          string = "ratelimiter"
 	PLUGIN_RATELIMITER_EXCEEDED string = "Rate limit exceeded"
@@ -67,30 +79,15 @@ func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (in
 
 	reached := l >= reqPerInterval
 
+	// Todo process timeleft
 	if reached {
 		p.RenderError(rw, errors.New(PLUGIN_RATELIMITER_EXCEEDED), "", 429)
 		return 429, errors.New(PLUGIN_RATELIMITER_EXCEEDED)
 	} else {
 		return http.StatusOK, nil
 	}
-
-	//var userSet = zrangeToUserSet(resultArr[1]);
-
-	//         var tooManyInInterval = userSet.length >= maxInInterval;
-	//         var timeSinceLastRequest = minDifference && (now - userSet[userSet.length - 1]);
-
-	//         var result;
-	//         if (tooManyInInterval || timeSinceLastRequest < minDifference) {
-	//           result = Math.min(userSet[0] - now + interval, minDifference ? minDifference - timeSinceLastRequest : Infinity);
-	//           result = Math.floor(result/1000); // convert to miliseconds for user readability.
-	//         } else {
-	//           result = 0;
-	//         }
-
 }
 
 func (p *RateLimiterPlugin) Outbound(res *http.Response) (int, error) {
-	//log.Warn("NoopPlugin::Outbound")
-	var err error
-	return http.StatusOK, err
+	return http.StatusOK, nil
 }
