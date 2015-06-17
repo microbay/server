@@ -8,8 +8,12 @@
         "methods" : ["GET", "PUT", "HEAD"],
         "plugins" : [
           {
+            "id" : "authjwt",
+            "key" : "server/config/key.sample"
+          },
+          {
             "id" : "ratelimiter",
-            "interval" : 10,
+            "interval" : 60,
             "max_req_per_interval" : 5
           }
         ],
@@ -33,7 +37,17 @@
       {
         "path" : "/batch",
         "methods" : ["GET"],
-        "plugins" : [],
+        "plugins" : [
+          {
+            "id" : "authjwt",
+            "key" : "server/config/key.sample"
+          },
+          {
+            "id" : "ratelimiter",
+            "interval" : 60,
+            "max_req_per_interval" : 2
+          }
+        ],
         "micros" : {
           "a" : [
             {

@@ -96,6 +96,7 @@ func bootstrapPlugins(resources []*Resource) {
 			if p, err := plugin.New(n["id"].(string)); err != nil {
 				log.Fatal(activePlugins[j], " plugin failed to bootstrap: ", err)
 			} else {
+				n["path"] = resources[i].Path
 				if rp, err := p.Bootstrap(&plugin.Config{redisPool, n}); err != nil {
 					log.Fatal(err)
 				} else {

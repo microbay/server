@@ -9,7 +9,7 @@ import (
 	"github.com/microbay/server/core"
 	"math"
 	"net/http"
-	//"reflect"
+	"strings"
 	"time"
 )
 
@@ -26,8 +26,16 @@ import (
 */
 
 const (
-	PLUGIN_RATELIMITER          string = "ratelimiter"
-	PLUGIN_RATELIMITER_EXCEEDED string = "Rate limit exceeded"
+	PLUGIN_RATELIMITER                            string = "ratelimiter"
+	PLUGIN_RATELIMITER_EXCEEDED                   string = "Rate limit exceeded"
+	PLUGIN_RATELIMITER_HEADER_AUTH                string = "Authorization"
+	PLUGIN_RATELIMITER_ERROR_HEADER_MISSING       string = "Rate Limiter Plugin needs Authorization header"
+	PLUGIN_RATELIMITER_REDIS_CMD_MULTI            string = "MULTI"
+	PLUGIN_RATELIMITER_REDIS_CMD_ZREMRANGEBYSCORE string = "ZREMRANGEBYSCORE"
+	PLUGIN_RATELIMITER_REDIS_CMD_ZRANGE           string = "ZRANGE"
+	PLUGIN_RATELIMITER_REDIS_CMD_ZADD             string = "ZADD"
+	PLUGIN_RATELIMITER_REDIS_CMD_EXPIRE           string = "EXPIRE"
+	PLUGIN_RATELIMITER_REDIS_CMD_EXEC             string = "EXEC"
 )
 
 type RateLimiterPlugin struct {
@@ -35,6 +43,7 @@ type RateLimiterPlugin struct {
 	redisPool      *redis.Pool
 	interval       int64
 	reqPerInterval int
+	key            string
 }
 
 func (p *RateLimiterPlugin) Bootstrap(config *Config) (Interface, error) {
@@ -43,33 +52,41 @@ func (p *RateLimiterPlugin) Bootstrap(config *Config) (Interface, error) {
 	if _, ok := config.Properties["interval"]; ok != true {
 		return p, errors.New("RateLimiterPlugin needs 'interval' int")
 	}
+	if _, ok := config.Properties["path"]; ok != true {
+		log.Fatal("RateLimiterPlugin needs failed to lookup path for ", config)
+	}
 	if _, ok := config.Properties["max_req_per_interval"]; ok != true {
 		return p, errors.New("RateLimiterPlugin needs 'max_req_per_interval' int")
 	}
 	p.interval = int64(config.Properties["interval"].(float64)) * 1000
 	p.reqPerInterval = int(config.Properties["max_req_per_interval"].(float64))
-
+	p.key = config.Properties["path"].(string)
+	p.key = strings.Replace(p.key, ":", "--", 10)
 	return p, err
 }
 
 func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (int, error) {
-	log.Info("RateLimiterPlugin::Inbound")
-
 	reqPerInterval := p.reqPerInterval
 	interval := p.interval * 1000
 	now := time.Now().UnixNano() / 1000
 	clearBefore := now - interval
-	key := "Patrick"
+	id := req.Header.Get(PLUGIN_RATELIMITER_HEADER_AUTH)
+	if id == "" {
+		err := errors.New(PLUGIN_RATELIMITER_ERROR_HEADER_MISSING)
+		p.RenderError(rw, err, "", 500)
+		return http.StatusInternalServerError, err
+	}
+	key := id + ":" + p.key
 	//minDifference := 100
 	//time.Since(startTime).Nanoseconds()
 
 	c := p.redisPool.Get()
-	c.Send("MULTI")
-	c.Send("zremrangebyscore", key, 0, clearBefore)
-	c.Send("zrange", key, 0, -1)
-	c.Send("zadd", key, now, now)
-	c.Send("expire", key, math.Ceil(float64(interval/1000000)))
-	r, err := c.Do("EXEC")
+	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_MULTI)
+	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_ZREMRANGEBYSCORE, key, 0, clearBefore)
+	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_ZRANGE, key, 0, -1)
+	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_ZADD, key, now, now)
+	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_EXPIRE, key, math.Ceil(float64(interval/1000000)))
+	r, err := c.Do(PLUGIN_RATELIMITER_REDIS_CMD_EXEC)
 	if err != nil {
 		p.RenderError(rw, err, "", 500)
 		return http.StatusInternalServerError, err
