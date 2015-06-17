@@ -60,6 +60,7 @@ func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (in
 	now := time.Now().UnixNano() / 1000
 	clearBefore := now - interval
 	key := "Patrick"
+	//minDifference := 100
 	//time.Since(startTime).Nanoseconds()
 
 	c := p.redisPool.Get()
@@ -78,10 +79,15 @@ func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (in
 	l := len(userSet)
 
 	reached := l >= reqPerInterval
+	//log.Error(reflect.TypeOf(userSet[len(userSet)-1]))
+	//timeSinceLastRequest := minDifference && now-userSet[len(userSet)-1]
 
 	// Todo process timeleft
+	//if reached || timeSinceLastRequest < minDifference {
 	if reached {
 		p.RenderError(rw, errors.New(PLUGIN_RATELIMITER_EXCEEDED), "", 429)
+		//result := math.Min(userSet[0]-now+interval, minDifference-timeSinceLastRequest)
+		//rw.Header().Set("Retry-After", string(result/1000))
 		return 429, errors.New(PLUGIN_RATELIMITER_EXCEEDED)
 	} else {
 		return http.StatusOK, nil
