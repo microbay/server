@@ -14,7 +14,7 @@
           {
             "id" : "ratelimiter",
             "interval" : 60,
-            "max_req_per_interval" : 5
+            "max_req_per_interval" : 100
           }
         ],
         "micros" : {
@@ -45,7 +45,7 @@
           {
             "id" : "ratelimiter",
             "interval" : 60,
-            "max_req_per_interval" : 2
+            "max_req_per_interval" : 3
           }
         ],
         "micros" : {
@@ -57,7 +57,7 @@
           ],
           "b" : [
             {
-              "url" : "http://localhost:9000/b?n=1",
+              "url" : "http://localhost:9001/b?n=1",
               "weight" : 1
             }
           ]

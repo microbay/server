@@ -27,6 +27,10 @@ func init() {
 	pluginRegistry[PLUGIN_AUTH_JWT] = reflect.TypeOf(AuthJWTPlugin{})
 	pluginRegistry[PLUGIN_RATELIMITER] = reflect.TypeOf(RateLimiterPlugin{})
 	pluginRegistry[PLUGIN_NOOP] = reflect.TypeOf(NoopPlugin{})
+	log.Debug(log.WithFields(log.Fields{
+		"type":    "pluginregistry",
+		"content": pluginRegistry,
+	}))
 }
 
 func New(id string) (Interface, error) {

@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Root context
@@ -24,7 +25,14 @@ type Context struct {
 	Params   core.URLParams
 }
 
-// Assigns global config to context --> muset be a better way to pass that onto context
+// LoggerMiddleware is generic middleware that will log requests to Logger (by default, Stdout).
+func (c *Context) LoggerMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
+	startTime := time.Now()
+	next(rw, req)
+	core.LogRequest(rw, req, startTime)
+}
+
+// Assigns global config to context --> must be a better way to pass that onto context
 func (c *Context) ConfigMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	c.Config = Config
 	next(rw, req)
@@ -66,7 +74,6 @@ func (c *Context) ResourceConfigMiddleware(rw web.ResponseWriter, req *web.Reque
 func (c *Context) PluginMiddleware(rw web.ResponseWriter, req *web.Request, next web.NextMiddlewareFunc) {
 	for i := range c.Resource.Plugins {
 		if _, err := c.Resource.Middleware[i].Inbound(rw, req); err != nil {
-			log.Warn(err.Error())
 			return
 		}
 	}
@@ -86,23 +93,33 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 
 	// Proxy if single request
 	if numRequests == 1 {
+
 		for batchKey := range c.Resource.Backends {
+
 			u := c.Resource.Backends[batchKey].Choose().String()
 			for key := range c.Params {
 				u = strings.Replace(u, ":"+key, c.Params[key], 1)
 			}
+
 			serverUrl, err := url.Parse(u)
 			if err != nil {
 				log.Error("URL failed to parse")
 				c.RenderError(rw, errors.New("Internal Server Error"), "", http.StatusInternalServerError)
 			}
+
 			reverseProxy := proxy.New(serverUrl, &c.Resource.Middleware)
+			startTime := time.Now()
 			res, err := reverseProxy.ServeHTTP(req.Request)
 			if err != nil {
 				c.RenderError(rw, err, "", http.StatusInternalServerError)
 			} else {
-				reverseProxy.CopyAndClose(rw, res)
+				if res.StatusCode > 499 {
+					c.RenderError(rw, errors.New("Internal Server Error"), "", http.StatusInternalServerError)
+				} else {
+					reverseProxy.CopyAndClose(rw, res)
+				}
 			}
+			core.LogBackendRequest(err, res, req.Method, serverUrl.String(), startTime)
 		}
 		return
 	}
@@ -118,7 +135,9 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 			for key := range c.Params {
 				u = strings.Replace(u, ":"+key, c.Params[key], 1)
 			}
+			startTime := time.Now()
 			res, err := http.Get(u)
+			core.LogBackendRequest(err, res, req.Method, req.URL.String(), startTime)
 			respones <- &CompoundResponse{res, err, batchKey}
 		}(batchKey)
 	}
@@ -129,6 +148,14 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 	// Create Compound response
 	output := make(map[string]interface{})
 	for composite := range respones {
+
+		// Bail out for entire request
+		// TODO Add choosable behaviours so devs can choose graceful errors if not all components are erroring.
+		if composite.Error != nil {
+			c.RenderError(rw, errors.New("Internal Server Error"), "", http.StatusInternalServerError)
+			return
+		}
+
 		defer composite.Response.Body.Close()
 		body, err := ioutil.ReadAll(composite.Response.Body)
 		var data interface{}
@@ -140,4 +167,5 @@ func (c *Context) BalancedProxy(rw web.ResponseWriter, req *web.Request, next we
 		output[composite.Key] = data
 	}
 	c.Render(rw, output, http.StatusOK)
+
 }
