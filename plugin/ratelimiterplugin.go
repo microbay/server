@@ -29,7 +29,9 @@ const (
 	PLUGIN_RATELIMITER                            string = "ratelimiter"
 	PLUGIN_RATELIMITER_EXCEEDED                   string = "Rate limit exceeded"
 	PLUGIN_RATELIMITER_HEADER_AUTH                string = "Authorization"
-	PLUGIN_RATELIMITER_ERROR_HEADER_MISSING       string = "Rate Limiter Plugin needs Authorization header"
+	PLUGIN_RATELIMITER_HEADER_CONSUMER            string = "X-Consumer-Id"
+	PLUGIN_RATELIMITER_HEADER_ISSUER              string = "X-Issuer-Id"
+	PLUGIN_RATELIMITER_ERROR_HEADER_MISSING       string = "Rate Limiter Plugin needs X-Issuer-Id and X-Consumer-Id headers"
 	PLUGIN_RATELIMITER_REDIS_CMD_MULTI            string = "MULTI"
 	PLUGIN_RATELIMITER_REDIS_CMD_ZREMRANGEBYSCORE string = "ZREMRANGEBYSCORE"
 	PLUGIN_RATELIMITER_REDIS_CMD_ZRANGE           string = "ZRANGE"
@@ -61,7 +63,7 @@ func (p *RateLimiterPlugin) Bootstrap(config *Config) (Interface, error) {
 	p.interval = int64(config.Properties["interval"].(float64)) * 1000
 	p.reqPerInterval = int(config.Properties["max_req_per_interval"].(float64))
 	p.key = config.Properties["path"].(string)
-	p.key = strings.Replace(p.key, ":", "--", 10)
+	p.key = strings.Replace(p.key, ":", "=", 10)
 	return p, err
 }
 
@@ -70,9 +72,16 @@ func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (in
 	interval := p.interval * 1000
 	now := time.Now().UnixNano() / 1000
 	clearBefore := now - interval
-	id := req.Header.Get(PLUGIN_RATELIMITER_HEADER_AUTH)
-	if id == "" {
+	consumer := req.Header.Get(PLUGIN_RATELIMITER_HEADER_CONSUMER)
+	issuer := req.Header.Get(PLUGIN_RATELIMITER_HEADER_ISSUER)
+	id := issuer + "." + consumer
+	if id == "." {
 		err := errors.New(PLUGIN_RATELIMITER_ERROR_HEADER_MISSING)
+
+		log.WithFields(log.Fields{
+			"type": PLUGIN_RATELIMITER + "." + PLUGIN_RATELIMITER_ERROR_HEADER_MISSING,
+		}).Info(err.Error())
+
 		p.RenderError(rw, err, "", 500)
 		return http.StatusInternalServerError, err
 	}
@@ -87,6 +96,7 @@ func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (in
 	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_ZADD, key, now, now)
 	c.Send(PLUGIN_RATELIMITER_REDIS_CMD_EXPIRE, key, math.Ceil(float64(interval/1000000)))
 	r, err := c.Do(PLUGIN_RATELIMITER_REDIS_CMD_EXEC)
+
 	if err != nil {
 		p.RenderError(rw, err, "", 500)
 		return http.StatusInternalServerError, err
@@ -102,6 +112,12 @@ func (p *RateLimiterPlugin) Inbound(rw web.ResponseWriter, req *web.Request) (in
 	// Todo process timeleft
 	//if reached || timeSinceLastRequest < minDifference {
 	if reached {
+		log.WithFields(log.Fields{
+			"type":     PLUGIN_RATELIMITER,
+			"issuer":   req.Header.Get(PLUGIN_RATELIMITER_HEADER_ISSUER),
+			"consumer": req.Header.Get(PLUGIN_RATELIMITER_HEADER_CONSUMER),
+			"path":     p.key,
+		}).Info(PLUGIN_RATELIMITER_EXCEEDED)
 		p.RenderError(rw, errors.New(PLUGIN_RATELIMITER_EXCEEDED), "", 429)
 		//result := math.Min(userSet[0]-now+interval, minDifference-timeSinceLastRequest)
 		//rw.Header().Set("Retry-After", string(result/1000))

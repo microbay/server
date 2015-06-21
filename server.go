@@ -3,15 +3,13 @@ package server
 import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/microbay/server/backends"
+	"github.com/microbay/server/core"
 	"github.com/microbay/server/plugin"
 	//"github.com/fvbock/endless" ----> Hot reloads
-	"fmt"
 	log "github.com/Sirupsen/logrus"
 	"github.com/gocraft/web"
 	"github.com/spf13/viper"
 	"net/http"
-	"regexp"
-	"strings"
 )
 
 var Config API
@@ -19,14 +17,15 @@ var redisPool *redis.Pool
 
 // Creates Root and resources routes and starts listening
 func Start() {
-	Config = LoadConfig()
+	log.Debug("server::Start")
+	Config = loadConfig()
 	redisPool = connectRedis()
 	defer redisPool.Close()
 	bootstrapRoutes(Config.Resources)
 	bootstrapLoadBalancer(Config.Resources)
 	bootstrapPlugins(Config.Resources)
 	rootRouter := web.New(Context{}).
-		Middleware(web.LoggerMiddleware).
+		Middleware((*Context).LoggerMiddleware).
 		Middleware(web.ShowErrorsMiddleware).
 		Middleware((*Context).RedisMiddleware).
 		Middleware((*Context).ConfigMiddleware).
@@ -42,27 +41,8 @@ func Start() {
 
 }
 
-// Thanks to https://gowalker.org/github.com/azer/url-router#PathToRegex
-func PathToRegex(path string) (*regexp.Regexp, []string) {
-	pattern, _ := regexp.Compile(":([A-Za-z0-9]+)")
-	matches := pattern.FindAllStringSubmatch(path, -1)
-	keys := []string{}
-
-	for i := range matches {
-		keys = append(keys, matches[i][1])
-	}
-
-	str := fmt.Sprintf("^%s\\/?$", strings.Replace(path, "/", "\\/", -1))
-
-	str = pattern.ReplaceAllString(str, "([^\\/]+)")
-	str = strings.Replace(str, ".", "\\.", -1)
-
-	regex, _ := regexp.Compile(str)
-
-	return regex, keys
-}
-
 func connectRedis() *redis.Pool {
+	log.Debug("server::connectRedis")
 	return &redis.Pool{
 		MaxIdle:   80,
 		MaxActive: 12000, // max number of connections
@@ -77,14 +57,16 @@ func connectRedis() *redis.Pool {
 }
 
 func bootstrapRoutes(resources []*Resource) {
+	log.Debug("server::bootstrapRoutes")
 	for _, resource := range resources {
-		regex, keys := PathToRegex(resource.Path)
+		regex, keys := core.PathToRegex(resource.Path)
 		resource.Regex = regex
 		resource.Keys = keys
 	}
 }
 
 func bootstrapPlugins(resources []*Resource) {
+	log.Debug("server::bootstrapPlugins")
 	for i := 0; i < len(resources); i++ {
 		activePlugins := resources[i].Plugins
 		plugins := make([]plugin.Interface, 0)
@@ -110,6 +92,7 @@ func bootstrapPlugins(resources []*Resource) {
 
 // Creates linked list (golang Ring) from weighted micros array per resource
 func bootstrapLoadBalancer(resources []*Resource) {
+	log.Debug("server::bootstrapLoadBalancer")
 	for i := 0; i < len(resources); i++ {
 		resources[i].Backends = make(map[string]backends.Backends)
 		for batchKey := range resources[i].Micros {

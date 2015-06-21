@@ -62,16 +62,9 @@ type ReverseProxy struct {
 // It also allows to define a chain of filter functions to process the outgoing response(s)
 func New(target *url.URL, plugins *[]plugin.Interface) *ReverseProxy {
 
-	targetQuery := target.RawQuery
+	//targetQuery := target.RawQuery
 	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.URL.Path = target.Path
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
+		req.URL = target
 	}
 	return &ReverseProxy{
 		Director: director,
